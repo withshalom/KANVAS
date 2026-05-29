@@ -839,16 +839,28 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
   <div class="kl-dialog">
     <div class="kl-head">
       <div class="kl-brand"><div class="kl-brand-dot"></div>KANVAS</div>
-      <div class="kl-sub">Vector-Aided Design · Artboard Mode</div>
+      <div class="kl-sub">Kernel-Aided Natural Visual Artboard Suite · Sketch Mode</div>
       <div class="kl-prompt">Select a page size to begin.<br>You can change this any time from the toolbar.</div>
     </div>
     <div class="kl-body" id="kl-body">
+
+      <div class="kl-group-label" style="color:var(--acc);">⋆ Common Sizes</div>
+      <div class="kl-grid col4">
+        <button class="kl-btn selected" onclick="klSelect('ltp')"><div class="kl-page-icon"></div><div class="kl-btn-name">Letter</div><div class="kl-btn-dim">8.5×11 in</div></button>
+        <button class="kl-btn" onclick="klSelect('ltl')"><div class="kl-page-icon land"></div><div class="kl-btn-name">Letter L</div><div class="kl-btn-dim">11×8.5 in</div></button>
+        <button class="kl-btn" onclick="klSelect('a4p')"><div class="kl-page-icon"></div><div class="kl-btn-name">A4</div><div class="kl-btn-dim">210×297 mm</div></button>
+        <button class="kl-btn" onclick="klSelect('a4l')"><div class="kl-page-icon land"></div><div class="kl-btn-name">A4 L</div><div class="kl-btn-dim">297×210 mm</div></button>
+        <button class="kl-btn" onclick="klSelect('legp')"><div class="kl-page-icon"></div><div class="kl-btn-name">Legal</div><div class="kl-btn-dim">8.5×14 in</div></button>
+        <button class="kl-btn" onclick="klSelect('a3p')"><div class="kl-page-icon big"></div><div class="kl-btn-name">A3</div><div class="kl-btn-dim">297×420 mm</div></button>
+        <button class="kl-btn" onclick="klSelect('tbl')"><div class="kl-page-icon big"></div><div class="kl-btn-name">Tabloid</div><div class="kl-btn-dim">11×17 in</div></button>
+        <button class="kl-btn" onclick="klSelect('a5p')"><div class="kl-page-icon"></div><div class="kl-btn-name">A5</div><div class="kl-btn-dim">148×210 mm</div></button>
+      </div>
 
       <div class="kl-group-label">ISO / Metric</div>
       <div class="kl-grid col4">
         <button class="kl-btn" onclick="klSelect('a6p')"><div class="kl-page-icon tall"></div><div class="kl-btn-name">A6</div><div class="kl-btn-dim">105×148</div></button>
         <button class="kl-btn" onclick="klSelect('a5p')"><div class="kl-page-icon"></div><div class="kl-btn-name">A5</div><div class="kl-btn-dim">148×210</div></button>
-        <button class="kl-btn selected" id="kl-a4p" onclick="klSelect('a4p')"><div class="kl-page-icon"></div><div class="kl-btn-name">A4</div><div class="kl-btn-dim">210×297</div></button>
+        <button class="kl-btn" onclick="klSelect('a4p')"><div class="kl-page-icon"></div><div class="kl-btn-name">A4</div><div class="kl-btn-dim">210×297</div></button>
         <button class="kl-btn" onclick="klSelect('a4l')"><div class="kl-page-icon land"></div><div class="kl-btn-name">A4 L</div><div class="kl-btn-dim">297×210</div></button>
         <button class="kl-btn" onclick="klSelect('a3p')"><div class="kl-page-icon big"></div><div class="kl-btn-name">A3</div><div class="kl-btn-dim">297×420</div></button>
         <button class="kl-btn" onclick="klSelect('a3l')"><div class="kl-page-icon wide"></div><div class="kl-btn-name">A3 L</div><div class="kl-btn-dim">420×297</div></button>
@@ -972,12 +984,22 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
         <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <select class="page-sel kanvas-only" id="page-size-sel" onchange="setPageSize(this.value)">
+        <optgroup label="── Common ──">
+          <option value="ltp" selected>Letter Portrait   8.5×11 in</option>
+          <option value="ltl">Letter Landscape  11×8.5 in</option>
+          <option value="a4p">A4 Portrait  210×297 mm</option>
+          <option value="a4l">A4 Landscape 297×210 mm</option>
+          <option value="legp">Legal  8.5×14 in</option>
+          <option value="a3p">A3 Portrait  297×420 mm</option>
+          <option value="tbl">Tabloid  11×17 in</option>
+          <option value="a5p">A5 Portrait  148×210 mm</option>
+        </optgroup>
         <optgroup label="── ISO / Metric ──">
           <option value="a6p">A6 Portrait  105×148</option>
           <option value="a6l">A6 Landscape 148×105</option>
           <option value="a5p">A5 Portrait  148×210</option>
           <option value="a5l">A5 Landscape 210×148</option>
-          <option value="a4p" selected>A4 Portrait  210×297</option>
+          <option value="a4p">A4 Portrait  210×297</option>
           <option value="a4l">A4 Landscape 297×210</option>
           <option value="a3p">A3 Portrait  297×420</option>
           <option value="a3l">A3 Landscape 420×297</option>
@@ -1040,6 +1062,41 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
       <button class="tbtn act" id="tb-brush" onclick="setTool('brush')">
         <div class="ti"><svg viewBox="0 0 24 24"><path d="M12 19c0 1.1.9 2 2 2h.5a2 2 0 0 0 0-4H14c-1.1 0-2 .9-2 2z"/><path d="M17.95 6.05L6.05 17.95"/><path d="M6.05 6.05l3 3"/><circle cx="6" cy="6" r="2"/></svg></div>
         <span class="tl">BRUSH</span>
+      </button>
+      <button class="tbtn" id="tb-pencil" onclick="setTool('pencil')" title="Pencil — fine grain (P)">
+        <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="4" y1="20" x2="20" y2="4"/>
+          <line x1="17" y1="4" x2="20" y2="7"/>
+          <path d="M4 20 l3 0 l0 -3"/>
+          <path d="M17 4 l3 3 L7 19 L4 17 Z" fill="currentColor" opacity="0.15"/>
+        </svg></div>
+        <span class="tl">PENCIL</span>
+      </button>
+      <button class="tbtn" id="tb-shade" onclick="setTool('shade')" title="Shade — tonal pencil (H)">
+        <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <ellipse cx="12" cy="14" rx="8" ry="4" opacity="0.25" fill="currentColor" stroke="none"/>
+          <ellipse cx="12" cy="14" rx="8" ry="4" opacity="0.45" fill="currentColor" stroke="none" transform="translate(0,-3)"/>
+          <ellipse cx="12" cy="14" rx="8" ry="4" opacity="0.65" fill="currentColor" stroke="none" transform="translate(0,-6)"/>
+          <line x1="19" y1="5" x2="19" y2="18"/>
+        </svg></div>
+        <span class="tl">SHADE</span>
+      </button>
+      <button class="tbtn" id="tb-kompass" onclick="setTool('kompass')" title="KOMPASS — carpenter's compass (K)">
+        <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Hinge pivot -->
+          <circle cx="12" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+          <!-- Needle leg -->
+          <line x1="12" y1="10" x2="6"  y2="21" stroke-width="1.4"/>
+          <circle cx="6" cy="21" r="1" fill="currentColor" stroke="none"/>
+          <!-- Pencil leg — flat carpenter's pencil shape -->
+          <line x1="12" y1="10" x2="18" y2="21" stroke-width="2.2"/>
+          <rect x="16.5" y="19" width="3" height="4" rx="0.4" fill="currentColor" opacity="0.5" stroke="none"/>
+          <!-- Graphite tip mark -->
+          <line x1="17" y1="23" x2="20" y2="23" stroke-width="1.8" opacity="0.9"/>
+          <!-- Arc preview -->
+          <path d="M 7.5 18 A 8 8 0 0 1 16.5 18" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.6"/>
+        </svg></div>
+        <span class="tl">KOMPASS</span>
       </button>
       <button class="tbtn" id="tb-pen" onclick="setTool('pen')">
         <div class="ti"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
@@ -1175,15 +1232,15 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
       <!-- Fill color -->
       <div class="cs-row">
         <span class="cs-chip-lbl">Fill</span>
-        <div class="cs-chip" id="fill-chip" onclick="document.getElementById('fill-native').click()" style="background:#ff3cac;"></div>
-        <input type="color" id="fill-native" value="#ff3cac" oninput="onFillColor(this.value)">
+        <div class="cs-chip" id="fill-chip" onclick="document.getElementById('fill-native').click()" style="background:#6a5e50;"></div>
+        <input type="color" id="fill-native" value="#6a5e50" oninput="onFillColor(this.value)">
         <div class="cs-none-toggle" id="fill-none-btn" onclick="toggleFillNone()">None</div>
       </div>
       <!-- Stroke color -->
       <div class="cs-row" style="margin-top:6px;">
         <span class="cs-chip-lbl" style="min-width:35px;">Line</span>
-        <div class="cs-chip" id="stroke-chip" onclick="document.getElementById('stroke-native').click()" style="background:#2b8fd4;"></div>
-        <input type="color" id="stroke-native" value="#2b8fd4" oninput="onStrokeColor(this.value)">
+        <div class="cs-chip" id="stroke-chip" onclick="document.getElementById('stroke-native').click()" style="background:#2a2018;"></div>
+        <input type="color" id="stroke-native" value="#2a2018" oninput="onStrokeColor(this.value)">
         <div class="cs-none-toggle active" id="stroke-none-btn" onclick="toggleStrokeNone()">None</div>
       </div>
       <div class="cr" style="margin-top:4px;">
@@ -1200,9 +1257,9 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
     <div class="color-panel">
       <div class="swatches" id="swatches"></div>
       <div class="color-row">
-        <div class="color-chip" id="color-chip" onclick="document.getElementById('native-cp').click()" style="background:#ff3cac;"></div>
-        <input type="text" id="hex-in" value="#ff3cac" maxlength="7" oninput="onHex(this.value)" onfocus="this.select()">
-        <input type="color" id="native-cp" value="#ff3cac" oninput="onNative(this.value)">
+        <div class="color-chip" id="color-chip" onclick="document.getElementById('native-cp').click()" style="background:#2a2018;"></div>
+        <input type="text" id="hex-in" value="#2a2018" maxlength="7" oninput="onHex(this.value)" onfocus="this.select()">
+        <input type="color" id="native-cp" value="#2a2018" oninput="onNative(this.value)">
       </div>
     </div>
 
@@ -1310,7 +1367,9 @@ body.mode-kreate #page-dim-pill { opacity:0.3; pointer-events:none; }
   <div class="kbd-title">Keyboard Shortcuts</div>
   <div class="kbd-grid">
     <div class="kbd-item"><span class="kbd-key">B</span><span class="kbd-desc">Brush tool</span></div>
-    <div class="kbd-item"><span class="kbd-key">P</span><span class="kbd-desc">Pen / Bezier</span></div>
+    <div class="kbd-item"><span class="kbd-key">P</span><span class="kbd-desc">Pencil — grain sketch</span></div>
+    <div class="kbd-item"><span class="kbd-key">H</span><span class="kbd-desc">Shade — tonal buildup</span></div>
+    <div class="kbd-item"><span class="kbd-key">K</span><span class="kbd-desc">KOMPASS — compass circle</span></div>
     <div class="kbd-item"><span class="kbd-key">E</span><span class="kbd-desc">Eraser</span></div>
     <div class="kbd-item"><span class="kbd-key">L</span><span class="kbd-desc">Line tool</span></div>
     <div class="kbd-item"><span class="kbd-key">S</span><span class="kbd-desc">Shape tool</span></div>
@@ -1979,7 +2038,24 @@ function setTool(t) {
   tool = t;
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
   const M = {select:'tb-select',brush:'tb-brush',pen:'tb-pen',
-             line:'tb-line',shape:'tb-shape',eraser:'tb-eraser',eyedrop:'tb-eyedrop',text:'tb-text'};
+             line:'tb-line',shape:'tb-shape',eraser:'tb-eraser',eyedrop:'tb-eyedrop',
+             text:'tb-text',pencil:'tb-pencil',shade:'tb-shade',kompass:'tb-kompass'};
+  // Presets — configure brush params when switching to sketch tools
+  if (t==='pencil') {
+    const sz=document.getElementById('sl-size');
+    const op=document.getElementById('sl-opacity');
+    if(sz&&parseFloat(sz.value)>4){sz.value=2;B.size=2;}
+    if(op){op.value=Math.min(parseFloat(op.value),0.80);B.opacity=parseFloat(op.value);}
+    document.getElementById('brush-panel').style.display='flex';
+  }
+  if (t==='kompass') { document.getElementById('brush-panel').style.display='flex'; }
+  if (t==='shade') {
+    const sz=document.getElementById('sl-size');
+    const op=document.getElementById('sl-opacity');
+    if(sz&&parseFloat(sz.value)<12){sz.value=24;B.size=24;}
+    if(op){op.value=0.18;B.opacity=0.18;}
+    document.getElementById('brush-panel').style.display='flex';
+  }
   if (M[t]) document.getElementById(M[t]).classList.add('act');
   document.getElementById('sb-tool').textContent = t.toUpperCase();
 
@@ -2092,7 +2168,12 @@ function onDown(e) {
     document.getElementById('hud').style.display='block'; return;
   }
 
-  if (tool==='brush') {
+  if (tool==='kompass') {
+    const w=S2W(s.x,s.y); kompassCenter={x:w.x,y:w.y}; kompassRadius=0;
+    canvas.setPointerCapture(e.pointerId);
+    isDrawing=true; scheduleDraw(); return;
+  }
+  if (tool==='brush'||tool==='pencil'||tool==='shade') {
     isDrawing=true; rawPts=[]; livePts=[];
     const w=S2W(s.x,s.y);
     ema.reset(s.x,s.y); vel.reset(s.x,s.y);
@@ -2119,6 +2200,10 @@ function onMove(e) {
     updateBrushCursor(); rebuildEraseCanvas(); scheduleDraw(); return;
   }
 
+  if (tool==='kompass' && isDrawing) {
+    if (kompassCenter) kompassRadius=Math.hypot(w.x-kompassCenter.x,w.y-kompassCenter.y);
+    scheduleDraw(); return;
+  }
   if (tool==='shape' && isDrawing) { scheduleDraw(); return; }
 
   if (tool==='eraser' && isDrawing) {
@@ -2147,6 +2232,21 @@ function onUp(e) {
   document.getElementById('hud').style.display='none';
   if (isPanning) { isPanning=false; updateCursor(); return; }
 
+  if (tool==='kompass' && isDrawing) {
+    isDrawing=false;
+    if (kompassCenter && kompassRadius > 1) {
+      snap();
+      const s={id:VM.nextId++,layer:VM.activeLayer,
+        color:B.color,blend:B.blend,opacity:B.opacity,size:B.size,
+        taper:0,glow:false,tool:'kompass',
+        kompassCenter:{...kompassCenter},kompassRadius:kompassRadius,
+        beziers:[],spinePoints:[]};
+      VM.push(s);
+      buildLayerList();
+      renderToCtx(eraseCtx,s,false);
+    }
+    kompassCenter=null; kompassRadius=0; scheduleDraw(); return;
+  }
   if (tool==='shape' && isDrawing) {
     isDrawing=false;
     const w = mw; // use last known world position (safe on iOS pointerup)
@@ -2196,7 +2296,8 @@ function onUp(e) {
   const beziers=fitBeziers(rawPts);
   if (beziers.length) {
     const s={id:VM.nextId++,layer:VM.activeLayer,color:B.color,blend:B.blend,
-      opacity:B.opacity,size:B.size,taper:B.taper,glow:B.glow,beziers,spinePoints:rawPts.map(p=>({...p}))};
+      opacity:B.opacity,size:B.size,taper:B.taper,glow:B.glow,
+      tool:tool,beziers,spinePoints:rawPts.map(p=>({...p}))};
     VM.push(s);
     buildLayerList();
     renderToCtx(eraseCtx, s, false);
@@ -2355,6 +2456,7 @@ function render() {
     ctx.restore();
     drawLineTool();
     drawPenPreview();
+    drawKompassOverlay();
     drawSelectionOverlay();
     if (showRulers) drawRulers();
     return;
@@ -2405,6 +2507,7 @@ function render() {
   // ── 6. Tool overlays (outside page clip) ─────────────────────────────────
   drawLineTool();
   drawPenPreview();
+  drawKompassOverlay();
   drawSelectionOverlay();
 
   // ── 7. Rulers ────────────────────────────────────────────────────────────
@@ -2463,6 +2566,228 @@ function drawPageGrid(ox,oy,pw,ph) {
 }
 
 // ── RENDER TO CONTEXT (works for both main canvas and erase canvas) ───────────
+
+// ── Pencil & Shade rendering ──────────────────────────────────────────
+function renderPencilToCtx(tctx, s, isLive) {
+  const pts = s.spinePoints || [];
+  if (pts.length < 2) return;
+  const r = Math.max(0.6, s.size * cam.zoom * 0.5);
+  // Main stroke — thin sharp line
+  tctx.save();
+  tctx.lineCap = 'round'; tctx.lineJoin = 'round';
+  tctx.lineWidth = r * 1.1;
+  tctx.strokeStyle = s.color;
+  tctx.globalAlpha = s.opacity * 0.82;
+  tctx.beginPath();
+  pts.forEach((pt,i) => {
+    const sp = W2S(pt.x, pt.y);
+    i===0 ? tctx.moveTo(sp.x,sp.y) : tctx.lineTo(sp.x,sp.y);
+  });
+  tctx.stroke();
+  // Grain pass — scattered micro-dots simulate pencil tooth
+  if (!isLive) {
+    tctx.fillStyle = s.color;
+    const grainR = r * 2.2;
+    for (let i=0; i<pts.length; i+=2) {
+      const sp = W2S(pts[i].x, pts[i].y);
+      const n = Math.ceil(grainR * 3);
+      for (let g=0; g<n; g++) {
+        const a = Math.random()*Math.PI*2;
+        const d = Math.random()*grainR;
+        const gx = sp.x + Math.cos(a)*d;
+        const gy = sp.y + Math.sin(a)*d;
+        tctx.globalAlpha = (1-d/grainR)*s.opacity*0.22*Math.random();
+        tctx.fillRect(gx, gy, 0.6, 0.6);
+      }
+    }
+  }
+  tctx.restore();
+}
+
+function renderShadeToCtx(tctx, s, isLive) {
+  const pts = s.spinePoints || [];
+  if (pts.length < 2) return;
+  const r = Math.max(4, s.size * cam.zoom);
+  tctx.save();
+  // Soft overlapping stamps — side-of-pencil effect
+  const step = Math.max(1, r * 0.4);
+  for (let i=0; i<pts.length; i++) {
+    const sp = W2S(pts[i].x, pts[i].y);
+    const gr = tctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,r);
+    const c = s.color;
+    gr.addColorStop(0,   c);
+    gr.addColorStop(0.4, c);
+    gr.addColorStop(1,   'rgba(0,0,0,0)');
+    tctx.globalAlpha = s.opacity * 0.18;
+    tctx.fillStyle = gr;
+    tctx.beginPath();
+    tctx.ellipse(sp.x, sp.y, r, r*0.45, 0, 0, Math.PI*2);
+    tctx.fill();
+  }
+  // Grain on committed shade strokes
+  if (!isLive) {
+    tctx.fillStyle = s.color;
+    for (let i=0; i<pts.length; i+=3) {
+      const sp = W2S(pts[i].x, pts[i].y);
+      for (let g=0; g<8; g++) {
+        const ox=(Math.random()-0.5)*r*2, oy=(Math.random()-0.5)*r*0.9;
+        tctx.globalAlpha = Math.random()*s.opacity*0.06;
+        tctx.fillRect(sp.x+ox, sp.y+oy, 0.8, 0.8);
+      }
+    }
+  }
+  tctx.restore();
+}
+
+// ── KOMPASS — carpenter's compass pencil ─────────────────────────────
+let kompassCenter = null;   // world-space pivot {x,y}
+let kompassRadius = 0;      // current radius in world units
+
+function renderKompassToCtx(tctx, s, isLive) {
+  if (!s.kompassCenter) return;
+  const sc = W2S(s.kompassCenter.x, s.kompassCenter.y);
+  const r  = s.kompassRadius * cam.zoom;
+  if (r < 1) return;
+  tctx.save();
+  const alpha = isLive ? s.opacity * 0.65 : s.opacity;
+  const sw    = Math.max(0.6, s.size * cam.zoom * 0.55);
+  tctx.lineCap = 'round'; tctx.lineJoin = 'round';
+  tctx.lineWidth = sw;
+  tctx.strokeStyle = s.color;
+
+  // Compass-drawn circle — slightly imperfect on committed strokes
+  const N = Math.max(80, Math.round(r * 1.8));
+  tctx.globalAlpha = alpha * 0.88;
+  tctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const wobble = isLive ? 0 : (Math.random() - 0.5) * sw * 0.7;
+    const rw = r + wobble;
+    const px = sc.x + Math.cos(a) * rw;
+    const py = sc.y + Math.sin(a) * rw;
+    i === 0 ? tctx.moveTo(px, py) : tctx.lineTo(px, py);
+  }
+  tctx.closePath();
+  tctx.stroke();
+
+  // Pencil grain ring on committed strokes
+  if (!isLive) {
+    tctx.fillStyle = s.color;
+    const grainN = Math.round(r * 10);
+    for (let g = 0; g < grainN; g++) {
+      const a   = Math.random() * Math.PI * 2;
+      const rg  = r + (Math.random() - 0.5) * sw * 3.5;
+      const gx  = sc.x + Math.cos(a) * rg;
+      const gy  = sc.y + Math.sin(a) * rg;
+      tctx.globalAlpha = Math.random() * alpha * 0.20;
+      tctx.fillRect(gx, gy, 0.65, 0.65);
+    }
+    // Tiny dot where pencil lifted (start of arc — top of circle)
+    tctx.globalAlpha = alpha * 0.55;
+    tctx.beginPath();
+    tctx.arc(sc.x, sc.y - r, sw * 1.2, 0, Math.PI * 2);
+    tctx.fill();
+  }
+  tctx.restore();
+}
+
+function drawKompassOverlay() {
+  if (!kompassCenter) return;
+  const sc = W2S(kompassCenter.x, kompassCenter.y);
+  const hasDrag = mw && (Math.abs(mw.x - kompassCenter.x) > 0.5 ||
+                          Math.abs(mw.y - kompassCenter.y) > 0.5);
+  const r = hasDrag ? Math.hypot(W2S(mw.x,mw.y).x - sc.x,
+                                  W2S(mw.x,mw.y).y - sc.y) : 0;
+  ctx.save();
+  const OA = 'rgba(180,118,32,';
+
+  // ── Pivot crosshair ──────────────────────────────────────────────
+  ctx.strokeStyle = OA+'0.90)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(sc.x, sc.y, 4.5, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(sc.x-9,sc.y); ctx.lineTo(sc.x+9,sc.y);
+  ctx.moveTo(sc.x,sc.y-9); ctx.lineTo(sc.x,sc.y+9);
+  ctx.stroke();
+
+  if (hasDrag && r > 6) {
+    const mp   = W2S(mw.x, mw.y);
+    const ang  = Math.atan2(mp.y - sc.y, mp.x - sc.x);
+    // Opposite angle for the static needle leg
+    const needleAng = ang + Math.PI + 0.22;
+    const legLen = Math.min(r * 0.55, 58);
+
+    // ── Needle leg (static side — thin rod) ──────────────────────
+    const nx = sc.x + Math.cos(needleAng) * legLen;
+    const ny = sc.y + Math.sin(needleAng) * legLen;
+    ctx.strokeStyle = OA+'0.75)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(sc.x, sc.y); ctx.lineTo(nx, ny); ctx.stroke();
+    // needle point
+    ctx.fillStyle = OA+'0.95)';
+    ctx.beginPath(); ctx.arc(nx, ny, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // ── Pencil leg (carpenter's pencil — flat rectangular body) ──
+    ctx.save();
+    ctx.translate(sc.x, sc.y);
+    ctx.rotate(ang);
+    // Leg shaft — carpenter's pencil is wide and flat
+    const legPx = Math.min(legLen, r * 0.52);
+    // Outer wood casing (tan)
+    ctx.fillStyle   = 'rgba(200,148,60,0.82)';
+    ctx.strokeStyle = 'rgba(130,80,20,0.70)';
+    ctx.lineWidth   = 0.8;
+    ctx.beginPath();
+    ctx.rect(0, -3.5, legPx, 7);
+    ctx.fill(); ctx.stroke();
+    // Graphite core strip (flat, down the middle)
+    ctx.fillStyle = 'rgba(38,30,22,0.80)';
+    ctx.fillRect(0, -1.2, legPx - 4, 2.4);
+    // Hinge at origin — small oval rivet
+    ctx.fillStyle   = 'rgba(160,120,50,0.95)';
+    ctx.strokeStyle = 'rgba(100,70,20,0.90)';
+    ctx.lineWidth   = 0.7;
+    ctx.beginPath(); ctx.ellipse(0, 0, 4, 3, 0, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+    // Pencil tip — bevelled flat end
+    ctx.fillStyle   = 'rgba(240,195,110,0.90)';
+    ctx.beginPath();
+    ctx.moveTo(legPx,     -3.5);
+    ctx.lineTo(legPx + 7, -1.2);
+    ctx.lineTo(legPx + 7,  1.2);
+    ctx.lineTo(legPx,      3.5);
+    ctx.closePath(); ctx.fill();
+    // Graphite tip
+    ctx.fillStyle = 'rgba(30,24,18,0.88)';
+    ctx.beginPath();
+    ctx.moveTo(legPx + 4, -1.0);
+    ctx.lineTo(legPx + 7, -0.6);
+    ctx.lineTo(legPx + 7,  0.6);
+    ctx.lineTo(legPx + 4,  1.0);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // ── Radius arm (thin dashed line to cursor) ───────────────────
+    ctx.setLineDash([3,4]);
+    ctx.strokeStyle = OA+'0.40)'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(sc.x, sc.y); ctx.lineTo(mp.x, mp.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── Preview circle ────────────────────────────────────────────
+    ctx.setLineDash([5,5]);
+    ctx.strokeStyle = OA+'0.30)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(sc.x, sc.y, r, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── Radius label ─────────────────────────────────────────────
+    const rW = Math.hypot(mw.x - kompassCenter.x, mw.y - kompassCenter.y);
+    ctx.font      = '9px Fira Code,monospace';
+    ctx.fillStyle = OA+'0.85)';
+    ctx.textAlign = 'left';
+    const lx = (sc.x + mp.x) / 2 + 10;
+    const ly = (sc.y + mp.y) / 2 - 6;
+    ctx.fillText('r ' + rW.toFixed(1), lx, ly);
+  }
+  ctx.restore();
+}
 function renderToCtx(tctx, s, isLive) {
   if (!s) return;
   if (s.type==='text') {
@@ -2477,6 +2802,9 @@ function renderToCtx(tctx, s, isLive) {
   }
 
   if (!s.beziers||!s.beziers.length) return;
+  if (s.tool==='pencil')  { renderPencilToCtx(tctx,s,isLive);  return; }
+  if (s.tool==='shade')   { renderShadeToCtx(tctx,s,isLive);   return; }
+  if (s.tool==='kompass') { renderKompassToCtx(tctx,s,isLive); return; }
   tctx.save();
   tctx.globalAlpha              = isLive ? Math.min(1,s.opacity*1.04) : s.opacity;
   tctx.globalCompositeOperation = s.blend||'source-over';
@@ -2570,10 +2898,10 @@ function splineToCtx(tctx, beziers, color, width) {
 
 // Live stroke (brush in motion)
 function drawLiveStroke() {
-  if (!isDrawing||tool!=='brush'||livePts.length<2) return;
+  if (!isDrawing||(tool!=='brush'&&tool!=='pencil'&&tool!=='shade')||livePts.length<2) return;
   const s={id:-1,layer:VM.activeLayer,color:B.color,blend:B.blend,
     opacity:B.opacity*0.88,size:B.size,taper:B.taper,glow:false,
-    beziers:fitBeziers(livePts),spinePoints:livePts};
+    tool:tool,beziers:fitBeziers(livePts),spinePoints:livePts};
   if (s.beziers.length) renderToCtx(ctx,s,true);
 
   // Glowing neon tip (from neon-glow engine)
@@ -2928,19 +3256,15 @@ setTimeout(()=>{
 setTimeout(()=>{
   // Demo art centred on A4 page
   const cx=105, cy=148;
-  demoStroke([[cx-60,cy+30],[cx-38,cy+52],[cx-8,cy+62],[cx+22,cy+58],[cx+52,cy+46],[cx+70,cy+28]],'#ff3cac',22,0.88);
-  demoStroke([[cx-50,cy+6],[cx-26,cy+20],[cx+2,cy+16],[cx+30,cy+6],[cx+52,cy+14]],'#784ba0',16,0.78,'screen');
-  demoStroke([[cx-36,cy-14],[cx-8,cy-4],[cx+16,cy-10],[cx+42,cy-2]],'#2b8fd4',12,0.80);
-  demoStroke([[cx-40,cy-38],[cx-10,cy-28],[cx+16,cy-32],[cx+40,cy-20]],'#00ffa3',10,0.72,'screen');
-  demoStroke([[cx-18,cy+2],[cx+2,cy-14],[cx+22,cy+2]],'#c77dff',9,0.80);
-  demoStroke([[cx-78,cy+54],[cx-48,cy+62],[cx-18,cy+56],[cx+14,cy+60],[cx+44,cy+54],[cx+72,cy+60]],'#ffb347',7,0.68,'overlay');
-
-  // A shape example
-  VM.push({
-    id:VM.nextId++,type:'shape',layer:'Sketch',shapeType:'rect',
-    x:cx-25,y:cy+72,w:50,h:18,
-    fillColor:'#ff3cac',strokeColor:null,strokeWidth:2,opacity:0.35,beziers:[]
-  });
+  // Charcoal & pencil sketch spectrum
+  demoStroke([[cx-70,cy+40],[cx-44,cy+58],[cx-10,cy+66],[cx+24,cy+60],[cx+58,cy+44],[cx+74,cy+22]],'#18140e',8,0.82,'source-over',0.68,'pencil');
+  demoStroke([[cx-55,cy+8],[cx-28,cy+24],[cx+4,cy+18],[cx+32,cy+8],[cx+56,cy+16]],'#2e2820',5,0.72,'multiply',0.60,'pencil');
+  demoStroke([[cx-40,cy-12],[cx-10,cy-2],[cx+18,cy-8],[cx+44,cy+0]],'#4a4238',3,0.60,'source-over',0.50,'pencil');
+  demoStroke([[cx-42,cy-40],[cx-12,cy-30],[cx+14,cy-34],[cx+42,cy-22]],'#6a5e50',2,0.45,'source-over',0.40,'pencil');
+  demoStroke([[cx-20,cy+4],[cx+0,cy-12],[cx+24,cy+4]],'#1e1a14',3,0.78,'multiply',0.55,'pencil');
+  demoStroke([[cx-80,cy+50],[cx-50,cy+62],[cx-20,cy+56],[cx+16,cy+60],[cx+46,cy+52],[cx+74,cy+58]],'#3a3028',28,0.20,'multiply',0.0,'shade');
+  demoStroke([[cx-30,cy-20],[cx+10,cy-10],[cx+50,cy-18]],'#5a5048',24,0.14,'multiply',0.0,'shade');
+  demoStroke([[cx-12,cy+30],[cx+4,cy+18],[cx+18,cy+26],[cx+30,cy+14]],'#0e0c08',1.5,0.88,'source-over',0.45,'pencil');
 
   buildLayerList(); scheduleDraw();
   showToast('Welcome to .KNV v1.0 · B=Brush P=Pen L=Line S=Shape E=Erase · ?=shortcuts');
