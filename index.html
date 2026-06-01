@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-  KERFsuite™ — Kernel-Aided Design Suite
-  Copyright (C) 2024-2025 KERFsuite / withshalom
+  KADsuite™ — Kernel-Aided Design Suite
+  Copyright (C) 2024-2025 KADsuite / withshalom
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as published
@@ -17,13 +17,26 @@
   along with this program. If not, see <https://www.gnu.org/licenses/>.
 
   SPDX-License-Identifier: AGPL-3.0-or-later
-  Commercial use requires a separate license — see KERFsuite for details: https://withshalom.github.io
+  KADsuite™, KAD™, KAM™, KUBE™, KARVE™, KONSTRUCT™, KULTIVATE™,
+  KODE™, and KANVAS™ are trademarks of withshalom / KADsuite.
+  Trademark rights are independent of and not transferred by this
+  AGPL-3.0 license. Forks and derivative works may not use these
+  marks or any confusingly similar names without express written
+  permission. The AGPL license governs this source code only.
+
+  Forks must remain open source under AGPL — KADsuite™ trademarks
+  and branding are not licensed and may not be used in any fork or
+  derivative work without separate written permission.
+
+  KADsuite™ trademarks are not covered by the AGPL-3.0 license.
+  Native builds are separate proprietary products.
 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="copyright" content="Copyright (C) 2024-2025 KADsuite / withshalom. Licensed under AGPL-3.0-or-later. KADsuite™, KAD™, KAM™, KUBE™, KARVE™, KONSTRUCT™, KULTIVATE™, KODE™, and KANVAS™ are trademarks of withshalom / KADsuite. Forks must remain open source under AGPL. Trademarks not licensed by AGPL.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KANVAS — Kernel-Aided Natural Visual Artboard Suite</title>
+<title>KANVAS — Kernel-Aided Node Vector Art Suite</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap');
 
@@ -62,9 +75,10 @@
 /* ── KANVAS Mode colors ─────────────────────────────────────────────────────── */
 /* KANVAS = teal/cyan — bounded, structured, artboard */
 --kv:       #0090a8;
---kv2:      #40c0d8;
---kv-g:     rgba(0,144,168,0.18);
---kv-dim:   rgba(0,144,168,0.08);
+--kv-end:   #8b5cf6;
+--kv2:      #c084fc;
+--kv-g:     rgba(139,92,246,0.20);
+--kv-dim:   rgba(139,92,246,0.08);
 /* KREATE = coral/rose — freeform, expressive, infinite */
 --kt:       #6848c0;
 --kt2:      #9878e0;
@@ -631,8 +645,8 @@ body.mode-kanvas .kanvas-mode-btn.kv {
 body.mode-kanvas .kanvas-mode-btn.kv .mb-mark {
   background:var(--kv); box-shadow:0 0 10px var(--kv-g);
 }
-body.mode-kanvas .brand-mark { background:linear-gradient(140deg,var(--kv),var(--kv2)); box-shadow:0 0 18px var(--kv-g); }
-body.mode-kanvas .brand-name { color:var(--kv); }
+body.mode-kanvas .brand-mark { background:linear-gradient(120deg,#0090a8,#8b5cf6); box-shadow:0 0 18px var(--kv-g); }
+body.mode-kanvas .brand-name { background:linear-gradient(90deg,#0090a8,#8b5cf6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 body.mode-kanvas #topbar { border-bottom-color:rgba(0,144,168,0.15); }
 
 /* KREATE active */
@@ -843,7 +857,7 @@ body.mode-kreate { --a1:#9878e0; --a2:#6848c0; --a3:#3a2880;
   <div class="kl-dialog">
     <div class="kl-head">
       <div class="kl-brand"><div class="kl-brand-dot"></div>KANVAS</div>
-      <div class="kl-sub">Kernel-Aided Natural Visual Artboard Suite · Sketch Mode</div>
+      <div class="kl-sub">Kernel-Aided Node Vector Art Suite · Sketch Mode</div>
       <div class="kl-prompt">Select a page size to begin.<br>You can change this any time from the toolbar.</div>
     </div>
     <div class="kl-body" id="kl-body">
@@ -937,7 +951,7 @@ body.mode-kreate { --a1:#9878e0; --a2:#6848c0; --a3:#3a2880;
       <div class="brand-mark" id="brand-mark">KNV</div>
       <div class="brand-col">
         <div class="brand-name">KANVAS</div>
-        <div class="brand-sub" id="kanvas-mode-sub">KANVAS · Kernel-Aided Natural Visual Artboard Suite</div>
+        <div class="brand-sub" id="kanvas-mode-sub">KANVAS · Kernel-Aided Node Vector Art Suite</div>
       </div>
     </div>
 
@@ -1360,7 +1374,7 @@ body.mode-kreate { --a1:#9878e0; --a2:#6848c0; --a3:#3a2880;
     <div class="ss"><span>STAB</span><span class="sv" id="sb-stab">0.82</span></div>
     <div class="ss"><span>ERASE</span><span class="sv" id="sb-erase">PIXEL</span></div>
     <div class="sb-r">
-      <div class="ss"><span class="sv ok">KANVAS v1.0</span></div>
+      <div class="ss"><span class="sv ok">KANVAS v0.0</span></div>
     </div>
   </div>
 
@@ -1396,7 +1410,7 @@ body.mode-kreate { --a1:#9878e0; --a2:#6848c0; --a3:#3a2880;
 <script>
 'use strict';
 // ══════════════════════════════════════════════════════════════════════════════
-//  .KNV — Vector-Aided Design  v1.0
+//  .KNV — Vector-Aided Design  v0.0
 //  Merged best of neon-glow engine (glow aesthetic) + artboard engine (artboard, true-erase)
 //  + Shape tool, rulers, theme toggle, fill/stroke pickers
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1523,7 +1537,7 @@ function setKANVASMode(mode) {
   const mark = document.getElementById('brand-mark');
   const sub  = document.getElementById('kanvas-mode-sub');
   if (mark) mark.textContent = mode === 'kanvas' ? 'KV' : 'KT';
-  if (sub)  sub.textContent  = mode === 'kanvas' ? 'KANVAS · Kernel-Aided Natural Visual Artboard Suite' : 'KREATE · Kernel-Aided Natural Visual Artboard Suite';
+  if (sub)  sub.textContent  = mode === 'kanvas' ? 'KANVAS · Kernel-Aided Node Vector Art Suite' : 'KREATE · Kernel-Aided Node Vector Art Suite';
   // Rulers only in KANVAS
   if (mode === 'kreate') {
     showRulers = false;
@@ -1816,7 +1830,7 @@ const VM = {
   },
   serialize() {
     const key = Object.keys(PAGE_SIZES).find(k=>PAGE_SIZES[k]===PAGE)||'a4p';
-    return JSON.stringify({ version:'1.0', layers:this.layers,
+    return JSON.stringify({ version:'0.0', layers:this.layers,
       activeLayer:this.activeLayer, nextId:this.nextId,
       strokes:this.strokes, page:key }, null, 2);
   },
@@ -3009,7 +3023,7 @@ function buildSVG() {
 
   const out=[];
   out.push(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>`);
-  out.push(`<!-- .KNV v1.0 · ${PAGE.label} · ${PAGE.dim} -->`);
+  out.push(`<!-- .KNV v0.0 · ${PAGE.label} · ${PAGE.dim} -->`);
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${f(W)}mm" height="${f(H)}mm" viewBox="0 0 ${f(W)} ${f(H)}">`);
   out.push(`  <rect width="${f(W)}" height="${f(H)}" fill="white"/>`);
 
@@ -3271,7 +3285,7 @@ setTimeout(()=>{
   demoStroke([[cx-12,cy+30],[cx+4,cy+18],[cx+18,cy+26],[cx+30,cy+14]],'#0e0c08',1.5,0.88,'source-over',0.45,'pencil');
 
   buildLayerList(); scheduleDraw();
-  showToast('Welcome to .KNV v1.0 · B=Brush P=Pen L=Line S=Shape E=Erase · ?=shortcuts');
+  showToast('Welcome to .KNV v0.0 · B=Brush P=Pen L=Line S=Shape E=Erase · ?=shortcuts');
 },500);
 
 </script>
