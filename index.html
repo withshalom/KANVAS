@@ -114,15 +114,19 @@ button,input,select,textarea { font-family:inherit; font-size:inherit; color:inh
 /* ═══════════════════════════════ LAYOUT ═══════════════════════════════════ */
 #app {
   display:grid;
-  grid-template-columns: var(--sw) 1fr var(--pw);
-  grid-template-rows: var(--th) auto 1fr var(--sh);
+  grid-template-columns: var(--sw) minmax(0,1fr) var(--pw);
+  grid-template-rows: var(--th) auto minmax(0,1fr) var(--sh);
   grid-template-areas:
     "top  top   top"
     "tool tabs  prop"
     "tool stage prop"
     "stat stat  stat";
   width:100vw; height:100vh; height:100dvh;
+  max-width:100vw; overflow:hidden;
 }
+/* Grid and flex children default to min-width:auto, which refuses to shrink
+   below content. Every one of these must be allowed to. */
+#topbar, #sheetbar, #stage, #status, #toolbar, #props { min-width:0; min-height:0; }
 /* KREATE has no sheets, so the tab row collapses rather than sitting empty. */
 body.mode-kreate #sheetbar { display:none; }
 
@@ -135,7 +139,12 @@ body.mode-kreate #sheetbar { display:none; }
   -webkit-backdrop-filter:blur(28px) saturate(180%);
   border-bottom:1px solid var(--border);
   padding:0 12px; z-index:80; position:relative;
+  /* Scroll sideways rather than widen the layout. Without this the topbar's
+     min-content width sets the width of the whole application. */
+  overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:none;
 }
+#topbar::-webkit-scrollbar { height:0; }
 .brand { display:flex; align-items:center; gap:9px; margin-right:16px; flex-shrink:0; }
 .brand-mark {
   width:30px; height:30px; flex-shrink:0; border-radius:8px;
@@ -168,6 +177,15 @@ body.mode-kreate #sheetbar { display:none; }
 .tb-btn svg   { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7;
                 stroke-linecap:round; stroke-linejoin:round; }
 .tb-btn.icon-only { padding:0 7px; }
+/* Dormant until the view is actually tilted, then it lights up and its icon
+   leans over — so the way back to square is obvious exactly when it is needed
+   and invisible when it is not. */
+#btn-straighten { opacity:0.35; }
+body.view-rotated #btn-straighten {
+  opacity:1; color:var(--a1); background:var(--a1g); border-color:var(--a2);
+}
+body.view-rotated #btn-straighten svg { transform:rotate(-12deg); }
+#btn-straighten svg { transition:transform .25s; }
 
 /* Mode toggle — the one control that repaints the whole app */
 .modeswitch {
@@ -267,6 +285,41 @@ body.mode-kreate #stage {
 body.mode-kreate .ruler { display:none; }
 body.no-rulers .ruler { display:none; }
 body.no-rulers #canvas-wrap { inset:0; }
+
+/* ── FLOATING CENTER BUTTON ──
+   The touch way back to a square, fitted sheet, modelled on KAD's COMMIT fab.
+   Appears only while the view is actually off — tilted, or panned and zoomed
+   away from the fit — which is the exact moment it would change anything.
+   Sits clear of the status bar and the home indicator. */
+#center-fab {
+  display:none;
+  position:fixed;
+  right:  calc(12px + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--sh) + 14px + env(safe-area-inset-bottom, 0px));
+  z-index:221;
+  align-items:center; gap:7px;
+  height:42px; padding:0 16px; border-radius:21px;
+  background:var(--a1); border:1px solid var(--a1);
+  color:var(--void);
+  font-family:var(--fm); font-size:12px; font-weight:500; letter-spacing:0.1em;
+  box-shadow:0 8px 24px rgba(0,0,0,0.55);
+  cursor:pointer; white-space:nowrap;
+  animation:fabIn .18s cubic-bezier(0.16,1,0.3,1);
+}
+#center-fab svg {
+  width:16px; height:16px; flex-shrink:0;
+  fill:none; stroke:currentColor; stroke-width:1.9;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+#center-fab:active { transform:scale(0.96); }
+/* Two conditions, both required: a touch device, and something worth fixing. */
+body.touch-mode #center-fab.show { display:flex; }
+@keyframes fabIn {
+  from { opacity:0; transform:translateY(8px) scale(0.94); }
+  to   { opacity:1; transform:none; }
+}
+/* Hand the pill the opposite corner so the two never collide. */
+body.touch-mode #page-pill { left:10px; right:auto; }
 
 /* Floating brush cursor ring */
 #brush-cursor {
@@ -438,6 +491,7 @@ select.fld option   { background:#0b0d16; color:var(--t1); }
 /* ═══════════════════════════════ STATUS ═══════════════════════════════════ */
 #status {
   grid-area:stat; display:flex; align-items:center; gap:0;
+  overflow-x:auto; scrollbar-width:none;
   background:var(--glass2); border-top:1px solid var(--border);
   padding:0 12px; font-family:var(--fm); font-size:10px; color:var(--t3);
   z-index:60; overflow:hidden;
@@ -534,8 +588,8 @@ kbd {
 
 /* ═══════════════════════════════ MOBILE ═══════════════════════════════════ */
 #drawer-toggle, #props-toggle {
-  display:none; position:fixed; top:calc(var(--th) + 8px); z-index:150;
-  width:38px; height:38px; border-radius:10px;
+  display:none; position:fixed; top:calc(var(--th) + var(--tabh) + 6px); z-index:150;
+  width:36px; height:36px; border-radius:10px;
   background:var(--glass2); border:1px solid var(--border-hi);
   color:var(--a1); font-size:17px; cursor:pointer;
   align-items:center; justify-content:center;
@@ -550,8 +604,26 @@ kbd {
 #scrim.on { display:block; }
 
 @media (max-width:900px) {
-  #app { grid-template-columns:1fr; grid-template-areas:
+  /* Chrome is height taken from a height-bound sheet, so it shrinks here. */
+  :root { --th:40px; --tabh:24px; --sh:22px; }
+  /* minmax(0,1fr), not 1fr: the bare form takes its minimum from the widest
+     item's min-content, which is the topbar, which is how a 393px phone ended
+     up with a 715px drawing surface. */
+  #app { grid-template-columns:minmax(0,1fr); grid-template-areas:
     "top" "tabs" "stage" "stat"; }
+  /* The dimension line under each tab repeats the Paper row in the panel and
+     costs a whole line of tab height to say it twice. */
+  .st-dim { display:none; }
+  .sheet-tab { min-width:74px; padding:0 10px; justify-content:center; }
+  .st-name { font-size:11.5px; }
+  #sheet-add { width:28px; font-size:15px; }
+  #status { padding:0 8px; font-size:9px; }
+  /* Coordinates and snap state are for aiming with a cursor; on touch the
+     finger is already on the point. */
+  #status .sb:nth-of-type(3), #status .sb:nth-of-type(5),
+  #status .sb-sep:nth-of-type(3), #status .sb-sep:nth-of-type(5),
+  #status .sb-sep:nth-of-type(6) { display:none; }
+  #page-pill { right:6px; bottom:6px; padding:3px 8px; font-size:9px; }
   #drawer-toggle, #props-toggle { display:flex; }
   #toolbar, #props {
     position:fixed; top:var(--th); bottom:var(--sh); z-index:100;
@@ -646,6 +718,10 @@ kbd {
     <button class="tb-btn icon-only" onclick="zoomFit()" title="Fit (F)">
       <svg viewBox="0 0 24 24"><path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/></svg>
     </button>
+    <button class="tb-btn icon-only" id="btn-straighten" onclick="resetViewRot()"
+            title="Straighten view (0)">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16"/></svg>
+    </button>
 
     <div class="tb-sep"></div>
 
@@ -672,7 +748,7 @@ kbd {
   <div id="toolbar">
 
     <div class="sec">Tools <span class="sec-hint" id="tool-hint">Brush</span></div>
-    <div class="tool-grid" id="tool-grid">
+    <div class="tool-grid">
       <button class="tbtn act" data-tool="brush" onclick="setTool('brush')" title="Brush (B)">
         <svg viewBox="0 0 24 24"><path d="M12 19c0 1.1.9 2 2 2h.5a2 2 0 0 0 0-4H14c-1.1 0-2 .9-2 2z"/><path d="M5.5 4.5 18 17"/></svg>
         <span class="tl">BRUSH</span>
@@ -867,7 +943,7 @@ kbd {
     <div class="divider"></div>
 
     <!-- Sheet & paper — paperspace only -->
-    <div class="kanvas-only" style="display:block;" id="sheet-block">
+    <div class="kanvas-only" style="display:block;">
       <div class="sec">Sheet</div>
       <div class="sec-body">
         <div class="btn-row" style="margin-bottom:4px;">
@@ -894,6 +970,19 @@ kbd {
         <div class="btn-row" style="margin-top:4px;">
           <button class="mini" onclick="rotateSheet(false)" title="Turn sheet counter-clockwise">&#8630; Turn</button>
           <button class="mini" onclick="rotateSheet(true)"  title="Turn sheet clockwise">Turn &#8631;</button>
+        </div>
+        <div class="btn-row" style="margin-top:4px;">
+          <button class="mini act" id="tog-bind" onclick="toggleBindArt()"
+                  title="Scale the drawing when the paper size changes">Art follows paper</button>
+        </div>
+      </div>
+
+      <div class="sec">View angle <span class="sec-hint" id="view-angle-hint">square</span></div>
+      <div class="sec-body">
+        <div class="btn-row">
+          <button class="mini" onclick="nudgeViewRot(-15)" title="Tilt the view left">&#8630; 15&deg;</button>
+          <button class="mini" onclick="resetViewRot()" title="Straighten the view (0)">Straighten</button>
+          <button class="mini" onclick="nudgeViewRot(15)" title="Tilt the view right">15&deg; &#8631;</button>
         </div>
       </div>
     </div>
@@ -938,7 +1027,7 @@ kbd {
     <div class="divider"></div>
 
     <div class="sec">Selection</div>
-    <div class="sec-body" id="sel-body">
+    <div class="sec-body">
       <div class="prop-row"><span class="prop-k">Type</span><span class="prop-v" id="s-type">&#8212;</span></div>
       <div class="prop-row"><span class="prop-k">Layer</span><span class="prop-v" id="s-layer">&#8212;</span></div>
       <div class="prop-row"><span class="prop-k">Detail</span><span class="prop-v" id="s-detail">&#8212;</span></div>
@@ -964,12 +1053,22 @@ kbd {
     <div class="sb-sep"></div>
     <div class="sb">ZOOM <b id="sb-zoom">100%</b></div>
     <div class="sb-sep"></div>
+    <div class="sb" onclick="resetViewRot()" style="cursor:pointer"
+         title="Straighten view">VIEW <b id="sb-rot">0&deg;</b></div>
+    <div class="sb-sep"></div>
     <div class="sb">SNAP <b id="sb-snap">ON</b></div>
     <div class="sb-sep"></div>
     <div class="sb" id="sb-msg" style="color:var(--t2);"></div>
   </div>
 
 </div>
+
+<!-- Floating CENTER — the touch way back to square. Shown by
+     updateCenterFab() only while the view is actually off. -->
+<button id="center-fab" onclick="centerView()" aria-label="Centre and straighten the view">
+  <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+  CENTER
+</button>
 
 <div id="toast"></div>
 
@@ -1040,6 +1139,8 @@ kbd {
         <div class="kbd-line"><span>Turn paper</span><kbd>2 twist</kbd></div>
         <div class="kbd-line"><span>Lay a segment</span><kbd>2 hold</kbd></div>
         <div class="kbd-line"><span>Reveal tools</span><kbd>1 hold</kbd></div>
+        <div class="kbd-line"><span>Tilt view</span><kbd>2 twist</kbd></div>
+        <div class="kbd-line"><span>Back to square</span><kbd>CENTER</kbd></div>
         <div class="kbd-line"><span>Straight line</span><kbd>tap, tap</kbd></div>
       </div>
       <div class="kbd-col">
@@ -1050,6 +1151,7 @@ kbd {
         <div class="kbd-line"><span>New sheet</span><kbd>Ctrl &#8629;</kbd></div>
         <div class="kbd-line"><span>Next sheet</span><kbd>Ctrl &#8594;</kbd></div>
         <div class="kbd-line"><span>Turn sheet</span><kbd>Ctrl &#8679; R</kbd></div>
+        <div class="kbd-line"><span>Straighten view</span><kbd>0</kbd></div>
         <div class="kbd-line"><span>Delete</span><kbd>Del</kbd></div>
       </div>
     </div>
@@ -1205,14 +1307,22 @@ let HIST = null;
 const HIST_MAX = 90;
 
 function newSheet(paperKey, orient) {
+  const key = PAPERS[paperKey] ? paperKey : 'a4';
+  const o = orient === 'l' ? 'l' : 'p';
+  const t = paperTrim({ paper:key, orient:o });
   return {
     id: sheetSeq,
     name: 'Sheet ' + sheetSeq++,
-    paper: PAPERS[paperKey] ? paperKey : 'a4',
-    orient: orient === 'l' ? 'l' : 'p',
+    paper: key,
+    orient: o,
     mem: blankMem(),
     cam: null,
     hist: blankHist(),
+    // The trim this sheet's art is measured against, and the cumulative scale
+    // currently applied relative to it. Together these make resizing
+    // reversible: see setPaper.
+    ref: { w:t.w, h:t.h },
+    artK: 1,
   };
 }
 function activeSheet() { return SHEETS[sheetIdx] || null; }
@@ -1236,8 +1346,11 @@ function applySpace() {
   if (!holder) return;
   MEM  = holder.mem;
   HIST = holder.hist;
-  if (holder.cam) { cam.panX = holder.cam.x; cam.panY = holder.cam.y; cam.zoom = holder.cam.z; }
-  else zoomFit();
+  // Restore only a camera the user actually set. An automatic one is re-fitted,
+  // so a sheet opened at a stale size corrects itself instead of staying wrong.
+  if (holder.cam && holder.camOwned) {
+    cam.panX = holder.cam.x; cam.panY = holder.cam.y; cam.zoom = holder.cam.z;
+  } else zoomFit(true);
   rebuildEraseCanvas();
   buildLayerList();
   syncPaperUI();
@@ -1302,11 +1415,37 @@ let eraseC   = document.createElement('canvas');
 let eraseCtx = eraseC.getContext('2d');
 let DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-const CW = () => wrap.clientWidth  || 1;
-const CH = () => wrap.clientHeight || 1;
+const VIEW = { w: 1, h: 1 };
+function measureView() {
+  let rw = 0, rh = 0;
+  if (canvas.getBoundingClientRect) {
+    const r = canvas.getBoundingClientRect();
+    rw = Math.round(r.width); rh = Math.round(r.height);
+  }
+  const cw = wrap.clientWidth || 0, ch = wrap.clientHeight || 0;
+  // Disagreement means layout has not settled. The smaller reading is the one
+  // that cannot put the sheet off the edge of the screen.
+  let w = (rw >= 40 && cw >= 40) ? Math.min(rw, cw) : Math.max(rw, cw);
+  let h = (rh >= 40 && ch >= 40) ? Math.min(rh, ch) : Math.max(rh, ch);
+  // A drawing surface wider than the window means something upstream failed to
+  // constrain it. Fitting to that centres the sheet somewhere the screen
+  // cannot show, which is exactly how it looks when it happens.
+  const winW = window.innerWidth || 0, winH = window.innerHeight || 0;
+  if (winW > 40 && w > winW) w = winW;
+  if (winH > 40 && h > winH) h = winH;
+  if (w >= 40 && h >= 40) {
+    const changed = (w !== VIEW.w || h !== VIEW.h);
+    VIEW.w = w; VIEW.h = h;
+    return changed;
+  }
+  return false;
+}
+const CW = () => VIEW.w;
+const CH = () => VIEW.h;
 
 function resizeCanvas() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
+  measureView();
   const w = CW(), h = CH();
   canvas.width  = Math.round(w * DPR);
   canvas.height = Math.round(h * DPR);
@@ -1319,28 +1458,184 @@ function resizeCanvas() {
 // Sheet-space millimetres -> screen CSS pixels. Y is flipped so that sheet
 // space runs bottom-left origin like a drawing board, while the canvas runs
 // top-left. Every tool works in sheet space and never sees the flip.
-const cam = { panX:0, panY:0, zoom:2.2, minZoom:0.02, maxZoom:240 };
-const W2S = (wx, wy) => ({ x: wx * cam.zoom + cam.panX, y: -wy * cam.zoom + cam.panY });
-const S2W = (sx, sy) => ({ x: (sx - cam.panX) / cam.zoom, y: -(sy - cam.panY) / cam.zoom });
+const cam = { panX:0, panY:0, zoom:2.2, rot:0, minZoom:0.02, maxZoom:240 };
 
-function zoomFit() {
-  const pad = 54;
+// Sheet millimetres -> screen pixels: scale, flip Y, rotate, translate.
+// With cam.rot === 0 this reduces exactly to the old two-term form, so the
+// unrotated path costs a cos and a sin and nothing else changes.
+function W2S(wx, wy) {
+  const x = wx * cam.zoom, y = -wy * cam.zoom;
+  if (!cam.rot) return { x: x + cam.panX, y: y + cam.panY };
+  const co = Math.cos(cam.rot), si = Math.sin(cam.rot);
+  return { x: x*co - y*si + cam.panX, y: x*si + y*co + cam.panY };
+}
+function S2W(sx, sy) {
+  let dx = sx - cam.panX, dy = sy - cam.panY;
+  if (cam.rot) {
+    const co = Math.cos(-cam.rot), si = Math.sin(-cam.rot);
+    const rx = dx*co - dy*si, ry = dx*si + dy*co;
+    dx = rx; dy = ry;
+  }
+  return { x: dx / cam.zoom, y: -dy / cam.zoom };
+}
+// The four corners of the sheet, in screen space, in order. Everything that
+// needs to draw or clip against the paper uses this rather than assuming the
+// sheet is an axis-aligned rectangle, which it stops being under rotation.
+function sheetQuad() {
+  const t = trim();
+  return [W2S(0,0), W2S(t.w,0), W2S(t.w,t.h), W2S(0,t.h)];
+}
+function quadPath(tctx, q) {
+  tctx.moveTo(q[0].x, q[0].y);
+  for (let i=1;i<q.length;i++) tctx.lineTo(q[i].x, q[i].y);
+  tctx.closePath();
+}
+function setViewRot(r, quiet) {
+  // Gentle detent at the square angles, so getting back to upright does not
+  // require surgery on a trackpad.
+  const q = Math.round(r / (Math.PI/2)) * (Math.PI/2);
+  if (Math.abs(r - q) < 0.055) r = q;
+  cam.rot = ((r % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  document.body.classList.toggle('view-rotated', !!cam.rot);
+  const el = document.getElementById('sb-rot');
+  if (el) el.textContent = Math.round(cam.rot*180/Math.PI) + '\u00b0';
+  updateCenterFab(true);
+  const hint = document.getElementById('view-angle-hint');
+  if (hint) hint.textContent = cam.rot
+    ? (Math.round(cam.rot*180/Math.PI) + '\u00b0 \u00b7 tap Straighten')
+    : 'square';
+  if (!quiet) scheduleDraw();
+}
+// Turn the view to an absolute angle about a screen point, holding whatever
+// is under that point still. Same rule as the pinch, so a button and a gesture
+// behave identically.
+function setViewRotAbout(r, sx, sy) {
+  const anchor = S2W(sx, sy);
+  setViewRot(r, true);
+  const back = W2S(anchor.x, anchor.y);
+  cam.panX += sx - back.x;
+  cam.panY += sy - back.y;
+  const holder = (mode === 'kreate') ? KREATE : activeSheet();
+  // An untouched view re-fits, which also re-centres. A view the user set
+  // keeps their zoom and just turns about the middle of the screen.
+  if (holder && !holder.camOwned) zoomFit(true); else { commitCam(true); scheduleDraw(); }
+}
+function nudgeViewRot(deg) {
+  cancelSettle();
+  setViewRotAbout(cam.rot + deg*Math.PI/180, CW()/2, CH()/2);
+  toast('View ' + Math.round(cam.rot*180/Math.PI) + '\u00b0');
+}
+// Put the view back where it started: square, fitted, centred, in whatever
+// orientation the sheet is already in. Handing the camera back to automatic is
+// part of it — after CENTER the view should track the sheet again rather than
+// stay pinned wherever a gesture left it.
+function centerView() {
+  cancelSettle();
+  setViewRot(0, true);
+  const holder = (mode === 'kreate') ? KREATE : activeSheet();
+  if (holder) holder.camOwned = false;
+  zoomFit(true);
+  updateCenterFab(true);
+  const s = activeSheet();
+  toast(mode === 'kanvas' && s
+    ? ('Centred \u00b7 ' + paperLabel(s))
+    : 'Centred');
+}
+
+// Show the button only when it would do something. The drift check is only
+// meaningful once the user has claimed the camera — an unclaimed one is being
+// healed to the fit every frame, so by definition it has not drifted.
+let fabCheckAt = 0, fabNeed = false;
+function updateCenterFab(force) {
+  const el = document.getElementById('center-fab');
+  if (!el) return;
+  const now = performance.now();
+  // The throttle keeps idealFit off the hot path during a gesture. It must not
+  // also swallow a KNOWN state change, or the button reports a stale answer
+  // for up to 150ms after the thing it is reporting on has already happened.
+  if (force || now - fabCheckAt > 150) {
+    fabCheckAt = now;
+    let need = !!cam.rot;
+    if (!need) {
+      const holder = (mode === 'kreate') ? KREATE : activeSheet();
+      if (holder && holder.camOwned) {
+        const f = idealFit();
+        need = !!f && (Math.abs(f.panX - cam.panX) > 10 ||
+                       Math.abs(f.panY - cam.panY) > 10 ||
+                       Math.abs(f.zoom - cam.zoom) > cam.zoom * 0.08);
+      }
+    }
+    fabNeed = need;
+  }
+  el.classList.toggle('show', fabNeed);
+}
+
+// Touch-only, like KAD's COMMIT. Decided by pointer type rather than screen
+// width, because the button is about thumbs and not about pixels — and a
+// hybrid laptop earns it the moment someone actually touches the screen.
+function markTouchMode() { document.body.classList.add('touch-mode'); }
+if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) markTouchMode();
+window.addEventListener('touchstart', markTouchMode, { once:true, passive:true });
+
+function resetViewRot(quiet) {
+  cancelSettle();
+  if (!cam.rot) { if (!quiet) toast('View is already square'); return false; }
+  setViewRotAbout(0, CW()/2, CH()/2);
+  if (!quiet) toast('View straightened');
+  return true;
+}
+
+// Breathing room, proportional to the space available. ~4.5% of the shorter
+// edge: about 16px on a phone, capped at 40 on a desktop.
+function fitPad() {
+  const s = Math.min(CW(), CH());
+  return Math.max(6, Math.min(40, s * 0.045));
+}
+
+// What the camera SHOULD be for the current viewport, sheet and view angle.
+// Returned rather than applied, so the same function can both perform the fit
+// and be used to check whether the live camera has drifted from it.
+function idealFit() {
+  const W = CW(), H = CH();
+  if (W < 40 || H < 40) return null;
+  const pad = fitPad();
+
+  let bw, bh, cx, cy;
   if (mode === 'kreate') {
     const b = contentBounds();
-    if (!b) { cam.zoom = 2.2; cam.panX = CW()/2; cam.panY = CH()/2; scheduleDraw(); return; }
-    const bw = Math.max(b.maxX - b.minX, 10), bh = Math.max(b.maxY - b.minY, 10);
-    cam.zoom = Math.min((CW()-pad*2)/bw, (CH()-pad*2)/bh);
-    cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom));
-    const cx = (b.minX+b.maxX)/2, cy = (b.minY+b.maxY)/2;
-    cam.panX = CW()/2 - cx*cam.zoom;
-    cam.panY = CH()/2 + cy*cam.zoom;
+    if (!b) return { zoom:2.2, panX:W/2, panY:H/2 };
+    bw = Math.max(b.maxX - b.minX, 10); bh = Math.max(b.maxY - b.minY, 10);
+    cx = (b.minX+b.maxX)/2; cy = (b.minY+b.maxY)/2;
   } else {
     const t = trim();
-    cam.zoom = Math.min((CW()-pad*2)/t.w, (CH()-pad*2)/t.h);
-    cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom));
-    cam.panX = CW()/2 - (t.w/2)*cam.zoom;
-    cam.panY = CH()/2 + (t.h/2)*cam.zoom;
+    bw = t.w; bh = t.h; cx = t.w/2; cy = t.h/2;
   }
+  // A rotated box needs a bigger window than its own width and height.
+  const co = Math.abs(Math.cos(cam.rot)), si = Math.abs(Math.sin(cam.rot));
+  const ew = bw*co + bh*si, eh = bw*si + bh*co;
+
+  let z = Math.min((W-pad*2)/ew, (H-pad*2)/eh);
+  z = Math.max(cam.minZoom, Math.min(cam.maxZoom, z));
+
+  // Put the content centre exactly at the viewport centre, whatever the angle.
+  const x = cx*z, y = -cy*z;
+  const c2 = Math.cos(cam.rot), s2 = Math.sin(cam.rot);
+  const rx = cam.rot ? (x*c2 - y*s2) : x;
+  const ry = cam.rot ? (x*s2 + y*c2) : y;
+  return { zoom:z, panX: W/2 - rx, panY: H/2 - ry };
+}
+
+function zoomFit(auto) {
+  const f = idealFit();
+  // Called before layout has settled, the arithmetic produces a garbage zoom
+  // that then gets committed and never revisited. Defer instead.
+  if (!f) { fitPending = true; return; }
+  cam.zoom = f.zoom; cam.panX = f.panX; cam.panY = f.panY;
+  fitPending = false;
+  // An automatic fit leaves the camera unclaimed, so a later viewport change
+  // is free to fit again. A fit the user asked for counts as their choice.
+  const holder = (mode === 'kreate') ? KREATE : activeSheet();
+  if (holder) { holder.cam = { x:cam.panX, y:cam.panY, z:cam.zoom }; holder.camOwned = !auto; }
   scheduleDraw();
 }
 
@@ -1430,7 +1725,7 @@ function addSheet(paperKey, orient) {
     newSheet(paperKey || (cur ? cur.paper : 'a4'), orient || (cur ? cur.orient : 'p')));
   sheetIdx += 1;
   selectedId = null;
-  applySpace(); zoomFit();
+  applySpace(); zoomFit(true);
   toast('Added ' + activeSheet().name + ' \u00b7 ' + paperDim(activeSheet()));
 }
 function duplicateSheet() {
@@ -1441,6 +1736,7 @@ function duplicateSheet() {
   SHEETS.splice(sheetIdx + 1, 0, {
     id: sheetSeq, name: src.name + ' copy', paper: src.paper, orient: src.orient,
     mem: copy.mem, cam: src.cam ? {...src.cam} : null, hist: blankHist(),
+    ref: src.ref ? {...src.ref} : null, artK: src.artK != null ? src.artK : 1,
   });
   sheetSeq++; sheetIdx += 1;
   applySpace();
@@ -1473,16 +1769,70 @@ function deleteSheet() {
    and the composition keeps its position relative to the corner it was
    measured from — the same as lifting the sheet and setting it down turned.
    ─────────────────────────────────────────────────────────────────────────── */
-function setPaper(key) {
+// When true, the drawing belongs to the sheet: a new paper size carries the
+// composition with it, scaled uniformly about the sheet centre. A mark a
+// tenth of the way across an A4 is a tenth of the way across the A3.
+//
+// Turned off, the art holds its true millimetre size and is only recentred —
+// which is what you want when the point of the bigger sheet is the margin
+// around the drawing, not a bigger drawing.
+let bindArtToSheet = true;
+function toggleBindArt() {
+  bindArtToSheet = !bindArtToSheet;
+  const b = document.getElementById('tog-bind');
+  if (b) b.classList.toggle('act', bindArtToSheet);
+  toast(bindArtToSheet ? 'Art scales with the sheet' : 'Art keeps its true size');
+}
+
+function setPaper(key, keepView) {
   if (mode !== 'kanvas' || !PAPERS[key]) return;
   const s = activeSheet(); if (!s) return;
+  const t0 = paperTrim(s);
   s.paper = key;
-  syncPaperUI(); buildSheetTabs(); updateProps(); zoomFit(); scheduleDraw();
+  const t1 = paperTrim(s);
+
+  if (Math.abs(t1.w-t0.w) > 1e-9 || Math.abs(t1.h-t0.h) > 1e-9) {
+    if (!s.ref) { s.ref = { w:t0.w, h:t0.h }; s.artK = 1; }
+    // Uniform, never a stretch: scaling x and y by different factors would
+    // turn every circle into an ellipse and every square into a rectangle.
+    // The smaller ratio is the one that keeps the whole composition on the
+    // new sheet.
+    //
+    // Measured from the sheet's REFERENCE trim, not from its current one.
+    // Chaining ratios drifts, because which edge binds can change between the
+    // trip out and the trip back; measuring both from the same origin cannot.
+    let k = 1;
+    if (bindArtToSheet) {
+      const K = Math.min(t1.w/s.ref.w, t1.h/s.ref.h);
+      k = K / (s.artK || 1);
+      s.artK = K;
+    }
+    const M = p => ({ x: (p.x - t0.w/2)*k + t1.w/2,
+                      y: (p.y - t0.h/2)*k + t1.h/2 });
+    if (MEM.objects.length) {
+      snap();
+      transformSheetContent(MEM.objects, M, k, {});
+      rebuildEraseCanvas();
+    }
+  }
+
+  syncPaperUI(); buildSheetTabs(); updateProps();
+  if (!keepView) zoomFit(true);
+  scheduleDraw();
   toast('Paper: ' + paperLabel(s) + ' \u00b7 ' + paperDim(s));
 }
 function setOrient(o) {
-  const s = activeSheet(); if (!s || s.orient === o) return;
-  rotateSheet(o === 'l');      // portrait -> landscape is a clockwise turn
+  const s = activeSheet();
+  if (!s) return;
+  const straightened = resetViewRot(true);
+  if (s.orient !== o) {
+    rotateSheet(o === 'l');    // portrait -> landscape is a clockwise turn
+  } else if (straightened) {
+    toast((o === 'l' ? 'Landscape' : 'Portrait') + ' \u00b7 view straightened');
+  } else {
+    toast('Already ' + (o === 'l' ? 'landscape' : 'portrait'));
+  }
+  syncPaperUI();
 }
 
 // A quarter turn clockwise on a sheet W x H maps (x,y) -> (y, W - x); the
@@ -1491,49 +1841,90 @@ function setOrient(o) {
 // `keepView` exists for the twist gesture: a turn normally re-fits the sheet,
 // which is right when you press the button and completely wrong mid-pinch,
 // where it would yank the zoom out from under the fingers still setting it.
+// Map every position and every length on a sheet.
+//
+//   M    maps a point in old sheet space to a point in new sheet space
+//   k    multiplies every length-like scalar: stroke widths, radii, text
+//        height, dimension offsets. Without it a scaled-down drawing keeps
+//        full-thickness ink and stops looking like the same drawing.
+//   opt  angle:  added to arc angles      (a quarter turn, or 0)
+//        swapRR: swap ellipse semi-axes   (true for a quarter turn)
+//        textRot: added to text rotation
+//
+// Everything that changes a sheet goes through here. That is the whole point:
+// there is no second path that can forget a field.
+function transformSheetContent(objects, M, k, opt) {
+  opt = opt || {};
+  const move = o => { const r = M(o); o.x = r.x; o.y = r.y; };
+  for (const o of objects) {
+    if (o.pts) for (const pt of o.pts) {
+      const r = M(pt); pt.x = r.x; pt.y = r.y;
+      if (pt.w != null) pt.w *= k;
+    }
+    if (o.beziers) for (const b of o.beziers) {
+      const a  = M({x:b.x0, y:b.y0}),   c1 = M({x:b.cx1,y:b.cy1});
+      const c2 = M({x:b.cx2,y:b.cy2}),  d  = M({x:b.x3, y:b.y3});
+      b.x0=a.x;   b.y0=a.y;   b.cx1=c1.x; b.cy1=c1.y;
+      b.cx2=c2.x; b.cy2=c2.y; b.x3=d.x;   b.y3=d.y;
+      if (b.w0 != null) b.w0 *= k;
+      if (b.w3 != null) b.w3 *= k;
+    }
+    if (o.cx != null && o.cy != null) { const p2 = M({x:o.cx,y:o.cy}); o.cx=p2.x; o.cy=p2.y; }
+    if (o.x1 != null) {
+      const a = M({x:o.x1,y:o.y1}), b2 = M({x:o.x2,y:o.y2});
+      o.x1=a.x; o.y1=a.y; o.x2=b2.x; o.y2=b2.y;
+    }
+    if (o.type === 'rect') {
+      // Map both corners, then re-normalise so w/h stay positive whatever the
+      // matrix did to the winding.
+      const c1 = M({x:o.x, y:o.y}), c2 = M({x:o.x+o.w, y:o.y+o.h});
+      o.x = Math.min(c1.x,c2.x); o.y = Math.min(c1.y,c2.y);
+      o.w = Math.abs(c2.x-c1.x); o.h = Math.abs(c2.y-c1.y);
+    } else if (o.x != null && o.y != null) move(o);
+
+    for (const key of ['p1','p2','center','vertex','pa','pb']) if (o[key]) move(o[key]);
+
+    // Lengths. A radius is a length, an angle is not.
+    if (o.r      != null) o.r      *= k;
+    if (o.radius != null) o.radius *= k;
+    if (o.rx     != null) o.rx     *= k;
+    if (o.ry     != null) o.ry     *= k;
+    if (o.width  != null) o.width  *= k;
+    if (o.size   != null && typeof o.size === 'number') o.size *= k;
+    if (o.offset != null) o.offset *= k;
+
+    if (opt.swapRR && o.type === 'ellipse') { const t = o.rx; o.rx = o.ry; o.ry = t; }
+    if (opt.angle && o.type === 'arc') { o.a0 += opt.angle; o.a1 += opt.angle; }
+    // Text turns with the paper too, or "everything rotates together" quietly
+    // excludes the one thing you actually read.
+    if (opt.textRot && o.type === 'text')
+      o.rot = (((o.rot||0) + opt.textRot) % 360 + 360) % 360;
+  }
+}
+
 function rotateSheet(cw, keepView) {
   if (mode !== 'kanvas') { toast('KREATE has no sheet to turn'); return false; }
   const s = activeSheet(); if (!s) return false;
   const t = paperTrim(s);
   const W0 = t.w, H0 = t.h;
-  const R = cw ? (p => ({ x:p.y,      y:W0 - p.x }))
+  // A quarter turn clockwise on a sheet W x H maps (x,y) -> (y, W - x). The
+  // counter-clockwise map is its exact inverse, so a turn and a turn back is
+  // lossless.
+  const M = cw ? (p => ({ x:p.y,      y:W0 - p.x }))
                : (p => ({ x:H0 - p.y, y:p.x      }));
-  const move = o => { const r = R(o); o.x = r.x; o.y = r.y; };
 
   snap();
-  for (const o of MEM.objects) {
-    if (o.pts) for (const p of o.pts) move(p);
-    if (o.beziers) for (const b of o.beziers) {
-      const a = R({x:b.x0,y:b.y0}),  c1 = R({x:b.cx1,y:b.cy1});
-      const c2 = R({x:b.cx2,y:b.cy2}), d = R({x:b.x3,y:b.y3});
-      b.x0=a.x;  b.y0=a.y;  b.cx1=c1.x; b.cy1=c1.y;
-      b.cx2=c2.x; b.cy2=c2.y; b.x3=d.x;  b.y3=d.y;
-    }
-    if (o.cx != null && o.cy != null) { const c = R({x:o.cx,y:o.cy}); o.cx=c.x; o.cy=c.y; }
-    if (o.x1 != null) { const a=R({x:o.x1,y:o.y1}), b2=R({x:o.x2,y:o.y2});
-                        o.x1=a.x;o.y1=a.y;o.x2=b2.x;o.y2=b2.y; }
-    if (o.type === 'rect') {
-      // Rotate the corner, then re-normalise so w/h stay positive.
-      const c1 = R({x:o.x, y:o.y}), c2 = R({x:o.x+o.w, y:o.y+o.h});
-      o.x = Math.min(c1.x,c2.x); o.y = Math.min(c1.y,c2.y);
-      o.w = Math.abs(c2.x-c1.x); o.h = Math.abs(c2.y-c1.y);
-    } else if (o.x != null && o.y != null) move(o);
-    if (o.type === 'ellipse') { const rx=o.rx; o.rx=o.ry; o.ry=rx; }
-    // An arc's angles turn with the paper; its radius does not.
-    if (o.type === 'arc') {
-      const d = cw ? -Math.PI/2 : Math.PI/2;
-      o.a0 += d; o.a1 += d;
-    }
-    for (const k of ['p1','p2','center','vertex']) if (o[k]) move(o[k]);
-    // Text turns too, or "everything rotates together" would quietly exclude
-    // the one thing you actually read.
-    if (o.type === 'text') o.rot = (((o.rot||0) + (cw ? -90 : 90)) % 360 + 360) % 360;
-  }
+  transformSheetContent(MEM.objects, M, 1, {
+    angle: cw ? -Math.PI/2 : Math.PI/2,
+    swapRR: true,
+    textRot: cw ? -90 : 90,
+  });
   s.orient = (s.orient === 'l') ? 'p' : 'l';
+  if (s.ref) { const rw = s.ref.w; s.ref.w = s.ref.h; s.ref.h = rw; }
 
   syncPaperUI(); buildSheetTabs(); updateProps();
   rebuildEraseCanvas();
-  if (!keepView) zoomFit();
+  if (!keepView) zoomFit(true);
   scheduleDraw();
   toast('Sheet turned \u00b7 ' + paperLabel(s) + ' \u00b7 ' + paperDim(s));
   return true;
@@ -1608,7 +1999,13 @@ function buildPaperGrid() {
 function commitPaperPicker() {
   closePaperPicker();
   if (pmForNew) addSheet(pmSel, pmOrient);
-  else setPaper(pmSel);
+  else {
+    setPaper(pmSel);
+    // The picker also offers an orientation; applying it is a turn, which
+    // carries the art the same way the resize just did.
+    const s = activeSheet();
+    if (s && s.orient !== pmOrient) rotateSheet(pmOrient === 'l');
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -2090,6 +2487,7 @@ function abortDrawing() {
 }
 
 function onDown(e) {
+  cancelSettle();
   if (e.pointerType === 'pen') penSeen = true;
   if (e.pointerType === 'touch') {
     // Second contact: the gesture layer owns this, so hand over cleanly.
@@ -2226,7 +2624,7 @@ function onUp(e) {
   // The hold already did its work; the lift that follows must not also
   // commit whatever the tool would have done.
   if (holdFired) { holdFired = false; abortDrawing(); isPanning = false; scheduleDraw(); return; }
-  if (isPanning) { isPanning = false; updateCursor(); commitCam(); return; }
+  if (isPanning) { isPanning = false; updateCursor(); commitCam(true); return; }
   if (!isDrawing) return;
   isDrawing = false;
 
@@ -2274,19 +2672,28 @@ function onDbl(e) {
 function onWheel(e) {
   e.preventDefault();
   const s = spt(e);
-  const before = S2W(s.x, s.y);
+  // Same anchor rule as the pinch: the point under the cursor stays under the
+  // cursor. Expressed through W2S so it holds at any view angle, which the
+  // previous component-wise form did not.
+  const anchor = S2W(s.x, s.y);
   const k = e.deltaY < 0 ? 1.13 : 1/1.13;
   cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom * k));
-  const after = S2W(s.x, s.y);
-  cam.panX += (after.x - before.x) * cam.zoom;
-  cam.panY -= (after.y - before.y) * cam.zoom;
-  commitCam(); scheduleDraw();
+  const back = W2S(anchor.x, anchor.y);
+  cam.panX += s.x - back.x;
+  cam.panY += s.y - back.y;
+  commitCam(true); scheduleDraw();
 }
-function commitCam() {
+// `owned` marks a deliberate change of view. Render-time bookkeeping passes
+// nothing and leaves an automatic fit automatic.
+function commitCam(owned) {
   const holder = (mode === 'kreate') ? KREATE : activeSheet();
-  if (holder) holder.cam = { x:cam.panX, y:cam.panY, z:cam.zoom };
+  if (holder) {
+    holder.cam = { x:cam.panX, y:cam.panY, z:cam.zoom };
+    if (owned) holder.camOwned = true;
+  }
   txt('sb-zoom', Math.round(cam.zoom / (96/MM_PER_IN) * 100) + '%');
 }
+let fitPending = false;
 
 /* ════════════════════════════════════════════════════════════════════════════
    TOUCH — TWO-FINGER GESTURES
@@ -2320,14 +2727,15 @@ const DUO = {
   // -Infinity, not 0: 0 is a real timestamp barely a quarter second after
   // load, so it would eat the cooldown and swallow a twist made early on.
   prevAng: 0, twistAcc: 0, lastTurn: -Infinity,
+  trail: [],
   downAt: 0,
   a: null, b: null,    // segment endpoints, sheet space
 };
 const DUO_SLOP   = 9;      // px of spread/slide before it counts as motion
 const DUO_TWIST   = 0.16;  // rad (~9 deg) of twist before it counts as motion
 const DUO_DWELL   = 200;   // ms of stillness that means "placing", not "moving"
-const TURN_STEP   = 50 * Math.PI/180;  // twist that commits one quarter turn
-const TURN_COOL   = 260;   // ms lockout so one twist cannot fire twice
+// Twist now drives cam.rot directly and continuously, so there is no
+// threshold and no lockout: the view follows the fingers exactly.
 
 // Tools where two contacts have an honest reading as two points.
 const DUO_SEGMENT_TOOLS = new Set(['line','rect','ellipse','circle','arc','dim-linear']);
@@ -2368,6 +2776,8 @@ canvas.addEventListener('touchstart', e => {
   DUO.twistAcc = 0;
   DUO.lastTurn = -Infinity;
   DUO.downAt = performance.now();
+  DUO.trail = [];
+  cancelSettle();          // a new gesture overrides any settle in flight
   DUO.mode = 'undecided';
   DUO.a = tWorld(e.touches[0], rect);
   DUO.b = tWorld(e.touches[1], rect);
@@ -2405,47 +2815,47 @@ canvas.addEventListener('touchmove', e => {
   if (DUO.mode !== 'transform') return;
   if (mode !== 'kanvas') DUO.prevAng = ang;
 
-  // ── Twist turns the paper ──
-  // KANVAS sheets turn in quarter steps, because a sheet has a trim and a
-  // trim has an orientation — there is no such thing as an A3 at 37 degrees.
-  // So the twist is an accumulator that fires a real rotateSheet() each time
-  // it passes the threshold, rather than a free-floating view angle.
-  if (mode === 'kanvas') {
-    // Frame-to-frame deltas, not a difference against the baseline: only the
-    // incremental form survives the +/-PI seam and lets a long twist rack up
-    // more than one quarter turn.
-    DUO.twistAcc += angDelta(ang, DUO.prevAng);
-    DUO.prevAng = ang;
-    const now = performance.now();
-    if (Math.abs(DUO.twistAcc) >= TURN_STEP && now - DUO.lastTurn > TURN_COOL) {
-      const cw = DUO.twistAcc > 0;     // screen Y is down, so +angle reads clockwise
-      if (rotateSheet(cw, true)) {
-        DUO.lastTurn = now;
-        DUO.twistAcc = 0;
-        // Content moved under the fingers; re-baseline so the pinch that is
-        // still in progress carries on from where it actually is.
-        duoBaseline(e, rect);
-        return;
-      }
-    }
-  }
+  // ── Twist tilts the VIEW ──
+  // Free and continuous, because tilting the board is not an edit. Turning the
+  // PAPER is a different act — it swaps the trim and remaps the art — and it
+  // stays on the Turn buttons where it belongs and can be undone.
+  //
+  // Frame-to-frame deltas, not a difference against the baseline: only the
+  // incremental form survives the +/-PI seam and lets a long twist keep going
+  // past a half turn.
+  // The sheet point that was under the midpoint on the PREVIOUS frame. Taken
+  // at the old midpoint and restored to the new one, so a slide translates,
+  // while a turn or a spread with the hand still pivots exactly where the
+  // hand is. Anchoring at the new midpoint instead would be a no-op and the
+  // slide would stop panning.
+  const anchor = S2W(DUO.midX, DUO.midY);
 
-  // ── Pinch zoom, anchored at the midpoint ──
-  // Same anchor-at-a-point math as the wheel handler, so what is under the
-  // fingers stays under the fingers while they spread.
-  const f  = dist / DUO.startDist;
-  const nz = Math.max(cam.minZoom, Math.min(cam.maxZoom, DUO.startZoom * f));
-  cam.panX = mid.x - (DUO.midX - DUO.startPanX) * (nz / DUO.startZoom);
-  cam.panY = mid.y - (DUO.midY - DUO.startPanY) * (nz / DUO.startZoom);
-  cam.zoom = nz;
-  commitCam(); scheduleDraw();
+  const dRot = angDelta(ang, DUO.prevAng);
+  DUO.prevAng = ang;
+  if (Math.abs(dRot) > 1e-6) { DUO.twistAcc += dRot; setViewRot(cam.rot + dRot, true); }
+
+  const f = dist / DUO.startDist;
+  cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, DUO.startZoom * f));
+
+  // Put the anchor back under the midpoint. One correction covers the turn,
+  // the spread and the slide together, and it makes the fingers the pivot for
+  // all three rather than the transform origin.
+  const back = W2S(anchor.x, anchor.y);
+  cam.panX += mid.x - back.x;
+  cam.panY += mid.y - back.y;
+  DUO.midX = mid.x; DUO.midY = mid.y;
+  trailPush();
+  commitCam(true); scheduleDraw();
 }, { passive:false });
 
 canvas.addEventListener('touchend', e => {
   if (!DUO.mode) return;
   if (e.touches.length >= 2) return;    // still a gesture, a third finger left
   if (DUO.mode === 'segment') { e.preventDefault(); commitDuoSegment(); }
-  DUO.mode = null; DUO.a = DUO.b = null; DUO.twistAcc = 0;
+  // Transform gestures get the liftoff spike eased away. A segment placement
+  // has already committed and must not have the view moved under it.
+  else if (DUO.mode === 'transform') settleAfterLift();
+  DUO.mode = null; DUO.a = DUO.b = null; DUO.twistAcc = 0; DUO.trail = [];
   commitCam(); scheduleDraw();
 }, { passive:false });
 
@@ -2454,6 +2864,82 @@ canvas.addEventListener('touchcancel', () => {
 }, { passive:false });
 
 function snapPt2(p) { return snapPt(p.x, p.y); }
+
+// ── RELEASE SETTLE ──
+const TRAIL_MS  = 260;   // how much history to keep
+const SETTLE_MS = 170;   // how long the ease home takes
+const SPIKE_MULT = 3.5;  // times the gesture's own median step
+const SPIKE_MIN  = 6;    // px-equivalent floor, so a still gesture has one
+let settleAnim = null;
+
+function trailPush() {
+  const now = performance.now();
+  DUO.trail.push({ t:now, panX:cam.panX, panY:cam.panY, zoom:cam.zoom, rot:cam.rot });
+  while (DUO.trail.length > 2 && now - DUO.trail[0].t > TRAIL_MS) DUO.trail.shift();
+}
+function cancelSettle() {
+  if (settleAnim) { cancelAnimationFrame(settleAnim); settleAnim = null; }
+}
+// Ease the camera to a recorded state. Rotation goes the short way round so a
+// correction across the 0/360 seam does not spin the long way.
+function settleTo(target) {
+  cancelSettle();
+  const from = { panX:cam.panX, panY:cam.panY, zoom:cam.zoom, rot:cam.rot };
+  let dRot = target.rot - from.rot;
+  while (dRot >  Math.PI) dRot -= Math.PI*2;
+  while (dRot < -Math.PI) dRot += Math.PI*2;
+  const t0 = performance.now();
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / SETTLE_MS);
+    const e = 1 - Math.pow(1 - k, 3);          // ease-out cubic
+    cam.panX = from.panX + (target.panX - from.panX)*e;
+    cam.panY = from.panY + (target.panY - from.panY)*e;
+    cam.zoom = from.zoom + (target.zoom - from.zoom)*e;
+    setViewRot(from.rot + dRot*e, true);
+    commitCam(true); scheduleDraw();
+    if (k < 1) settleAnim = requestAnimationFrame(step);
+    else { settleAnim = null; setViewRot(cam.rot); }
+  };
+  settleAnim = requestAnimationFrame(step);
+}
+// Discard the liftoff spike, and ONLY the spike.
+//
+// A fixed rollback window is the obvious approach and the wrong one: it
+// rewinds whatever happened in the last N milliseconds whether or not
+// anything went wrong, so a slow deliberate twist that ends in stillness gets
+// undone. What actually marks a liftoff is that it is anomalous — the reported
+// contact lurches several times faster than the gesture had been moving.
+//
+// So the gesture's own median step sets the scale, and only the tail of frames
+// exceeding a multiple of it is thrown away. A clean release has no such tail
+// and is left completely alone.
+function settleAfterLift() {
+  const tr = DUO.trail;
+  if (!tr || tr.length < 4) return;
+
+  // Per-step motion in one comparable unit. Rotation and zoom are scaled into
+  // pixel-equivalents so a twist-only spike is as visible as a pan-only one.
+  const step = [];
+  for (let i = 1; i < tr.length; i++) {
+    const a = tr[i-1], b = tr[i];
+    let dR = Math.abs(b.rot - a.rot);
+    if (dR > Math.PI) dR = Math.PI*2 - dR;
+    step.push(Math.hypot(b.panX - a.panX, b.panY - a.panY)
+            + dR * 140
+            + Math.abs(b.zoom - a.zoom) / Math.max(a.zoom, 1e-6) * 140);
+  }
+  const sorted = step.slice().sort((x, y) => x - y);
+  const med = sorted[Math.floor(sorted.length / 2)] || 0;
+  const limit = Math.max(med * SPIKE_MULT, SPIKE_MIN);
+
+  // Walk back from the end while the frames are anomalous; stop at the first
+  // normal one. step[i] is the motion from tr[i] to tr[i+1], so tr[cut] is the
+  // last state before the spike began.
+  let cut = step.length;
+  while (cut > 0 && step[cut-1] > limit) cut--;
+  if (cut === step.length) return;      // nothing anomalous at the end
+  settleTo(tr[cut]);
+}
 
 // Reuses the same commit path as the mouse tools rather than a parallel one:
 // a segment laid down with two fingers must be indistinguishable from one
@@ -2716,8 +3202,41 @@ function paperColors() {
            gridMaj:'rgba(20,16,40,0.13)' };
 }
 
+// The two invariants that the opening-position bug violated:
+//   * the canvas backing store matches the element's real rendered size
+//   * an unclaimed camera matches the ideal fit for that size
+// Checked every frame. A measurement taken while layout was unsettled now
+// survives for one frame instead of forever.
+function syncViewport() {
+  if (measureView()) fitPending = true;
+  const w = CW(), h = CH();
+  if (w < 40 || h < 40) return;
+  const needW = Math.round(w * DPR), needH = Math.round(h * DPR);
+  if (canvas.width !== needW || canvas.height !== needH) {
+    canvas.width = needW; canvas.height = needH;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    resizeRulers();
+    fitPending = true;
+  }
+  const holder = (mode === 'kreate') ? KREATE : activeSheet();
+  if (!holder || holder.camOwned) { fitPending = false; return; }
+  const f = idealFit();
+  if (!f) return;
+  // Tolerances, not equality: re-fitting on floating-point noise would fight
+  // any animation and never settle.
+  if (fitPending ||
+      Math.abs(f.panX - cam.panX) > 0.5 ||
+      Math.abs(f.panY - cam.panY) > 0.5 ||
+      Math.abs(f.zoom - cam.zoom) > cam.zoom * 0.002) {
+    cam.zoom = f.zoom; cam.panX = f.panX; cam.panY = f.panY;
+    holder.cam = { x:cam.panX, y:cam.panY, z:cam.zoom };
+    fitPending = false;
+  }
+}
+
 function render() {
   rafId = null;
+  syncViewport();
   const W = CW(), H = CH();
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,W,H);
@@ -2725,53 +3244,93 @@ function render() {
   if (mode === 'kanvas') drawSheet(W,H);
   else drawInfinite(W,H);
 
-  // Committed art comes off the erase buffer so erase records actually bite.
-  if (eraseC.width) {
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.drawImage(eraseC, 0, 0);
-    ctx.restore();
-  }
+  drawArt();
+
+  if (mode === 'kanvas') drawPasteboardVeil(W, H);
 
   drawLive();
   drawSelection();
   drawRulers();
   commitCam();
+  updateCenterFab();
+}
+
+// Committed art. Drawn straight into the frame whenever it can be, because
+// anything cached against the camera goes stale the moment the camera moves.
+function drawArt() {
+  const objs = visibleObjects();
+  let hasErase = false;
+  for (const o of objs) if (o.type === 'erase') { hasErase = true; break; }
+
+  if (!hasErase) {
+    for (const o of objs) drawObject(ctx, o, false);
+    return;
+  }
+
+  // Erasures need destination-out against the ink alone, so ink goes to an
+  // offscreen buffer, gets cut, and is composited over the sheet. Rebuilt HERE,
+  // in the frame that uses it, because it is a function of the camera.
+  rebuildEraseCanvas();
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(eraseC, 0, 0);
+  ctx.restore();
 }
 
 /* ── Backgrounds ─────────────────────────────────────────────────────────── */
 function drawSheet(W,H) {
   const t = trim(), C = paperColors();
-  const o = W2S(0, t.h);                      // top-left of the sheet
-  const pw = t.w*cam.zoom, ph = t.h*cam.zoom;
+  const q = sheetQuad();
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.55)';
   ctx.shadowBlur = 26; ctx.shadowOffsetY = 8;
   ctx.fillStyle = C.sheet;
-  ctx.fillRect(o.x, o.y, pw, ph);
+  ctx.beginPath(); quadPath(ctx, q); ctx.fill();
   ctx.restore();
 
   if (showGrid && cam.zoom > 0.35) {
     ctx.save();
-    ctx.beginPath(); ctx.rect(o.x, o.y, pw, ph); ctx.clip();
+    ctx.beginPath(); quadPath(ctx, q); ctx.clip();
     const step = gridStep() * (gridStep() < 5 ? 10 : 5);
     ctx.lineWidth = 1;
+    // Both endpoints go through W2S, so the grid rides the sheet whatever
+    // angle the view is at.
     for (let gx = 0; gx <= t.w + 0.001; gx += step) {
-      const p = W2S(gx, 0);
+      const a = W2S(gx, 0), b = W2S(gx, t.h);
       ctx.strokeStyle = (Math.abs(gx % (step*5)) < 0.001) ? C.gridMaj : C.grid;
-      ctx.beginPath(); ctx.moveTo(p.x, o.y); ctx.lineTo(p.x, o.y+ph); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     for (let gy = 0; gy <= t.h + 0.001; gy += step) {
-      const p = W2S(0, gy);
+      const a = W2S(0, gy), b = W2S(t.w, gy);
       ctx.strokeStyle = (Math.abs(gy % (step*5)) < 0.001) ? C.gridMaj : C.grid;
-      ctx.beginPath(); ctx.moveTo(o.x, p.y); ctx.lineTo(o.x+pw, p.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     ctx.restore();
   }
 
   ctx.strokeStyle = C.edge; ctx.lineWidth = 1;
-  ctx.strokeRect(o.x+0.5, o.y+0.5, pw, ph);
+  ctx.beginPath(); quadPath(ctx, q); ctx.stroke();
+}
+
+// Everything outside the trim is pasteboard, not sheet. Veiling it is what
+// makes the binding legible: a mark that has fallen off the paper looks like
+// it has fallen off the paper.
+function drawPasteboardVeil(W, H) {
+  const q = sheetQuad();
+  // Even-odd against the sheet quad: correct at any view angle, where four
+  // axis-aligned bands would not be.
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,12,20,0.80)';
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  quadPath(ctx, q);
+  ctx.fill('evenodd');
+  // Re-state the trim edge on top of the veil so it stays crisp.
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); quadPath(ctx, q); ctx.stroke();
+  ctx.restore();
 }
 
 // KREATE gets a dot field instead of paper: it marks scale without implying
@@ -2779,7 +3338,7 @@ function drawSheet(W,H) {
 function drawInfinite(W,H) {
   if (!showGrid) return;
   const step = gridStep() * 10 * cam.zoom;
-  if (step < 9) return;
+  if (step < 9 || cam.rot) return;
   const org = W2S(0,0);
   const sx = ((org.x % step) + step) % step;
   const sy = ((org.y % step) + step) % step;
@@ -2796,9 +3355,16 @@ function drawInfinite(W,H) {
 }
 
 /* ── Erase buffer ────────────────────────────────────────────────────────── */
+// Called by drawArt each frame it is needed, and harmlessly by the various
+// content-changed paths. Cheap-exits when nothing erases, which is the common
+// case now that art no longer routes through here.
 function rebuildEraseCanvas() {
   const W = Math.round(CW()*DPR), H = Math.round(CH()*DPR);
   if (!W || !H) return;
+  if (!MEM || !MEM.objects.some(o => o.type === 'erase')) {
+    if (eraseC.width) { eraseCtx.setTransform(1,0,0,1,0,0); eraseCtx.clearRect(0,0,eraseC.width,eraseC.height); }
+    return;
+  }
   if (eraseC.width !== W || eraseC.height !== H) { eraseC.width = W; eraseC.height = H; }
   eraseCtx.setTransform(1,0,0,1,0,0);
   eraseCtx.clearRect(0,0,W,H);
@@ -2987,7 +3553,7 @@ function arcPath(tctx, o) {
   // space is a CW sweep on screen. Negating the angles and flipping the
   // direction flag is the whole of the correction.
   if (o.full) { tctx.arc(c.x, c.y, r, 0, Math.PI*2); return; }
-  tctx.arc(c.x, c.y, r, -o.a0, -o.a1, o.ccw);
+  tctx.arc(c.x, c.y, r, cam.rot - o.a0, cam.rot - o.a1, o.ccw);
 }
 function drawArc(tctx, o, isLive) {
   if (o.r * cam.zoom < 0.3) return;
@@ -3020,7 +3586,8 @@ function drawKompassArc(tctx, o, isLive) {
     const t = i/N;
     const ang = (o.full ? t*Math.PI*2 : (o.ccw ? o.a0 + sweep*t : o.a0 - sweep*t));
     const rw = r + (isLive ? 0 : (rnd()-0.5)*sw*0.7);
-    const px = c.x + Math.cos(-ang)*rw, py = c.y + Math.sin(-ang)*rw;
+    const sa = cam.rot - ang;
+    const px = c.x + Math.cos(sa)*rw, py = c.y + Math.sin(sa)*rw;
     i === 0 ? tctx.moveTo(px,py) : tctx.lineTo(px,py);
   }
   if (o.full) tctx.closePath();
@@ -3032,8 +3599,9 @@ function drawKompassArc(tctx, o, isLive) {
       const t = rnd();
       const ang = (o.full ? t*Math.PI*2 : (o.ccw ? o.a0 + sweep*t : o.a0 - sweep*t));
       const rg = r + (rnd()-0.5)*sw*3.5;
+      const sa2 = cam.rot - ang;
       tctx.globalAlpha = rnd()*alpha*0.18;
-      tctx.fillRect(c.x + Math.cos(-ang)*rg, c.y + Math.sin(-ang)*rg, 0.65, 0.65);
+      tctx.fillRect(c.x + Math.cos(sa2)*rg, c.y + Math.sin(sa2)*rg, 0.65, 0.65);
     }
   }
   tctx.restore();
@@ -3063,8 +3631,9 @@ function drawLineObj(tctx, o, isLive) {
 }
 function drawRectObj(tctx, o, isLive) {
   tctx.save(); applyVectorStyle(tctx, o, isLive);
-  const a = W2S(o.x, o.y + o.h);
-  tctx.beginPath(); tctx.rect(a.x, a.y, o.w*cam.zoom, o.h*cam.zoom);
+  // Four corners through the transform, not one corner plus a width.
+  const q = [W2S(o.x,o.y), W2S(o.x+o.w,o.y), W2S(o.x+o.w,o.y+o.h), W2S(o.x,o.y+o.h)];
+  tctx.beginPath(); quadPath(tctx, q);
   if (o.fill) tctx.fill();
   if (o.stroke !== false) tctx.stroke();
   tctx.restore();
@@ -3072,7 +3641,9 @@ function drawRectObj(tctx, o, isLive) {
 function drawEllipseObj(tctx, o, isLive) {
   tctx.save(); applyVectorStyle(tctx, o, isLive);
   const c = W2S(o.cx,o.cy);
-  tctx.beginPath(); tctx.ellipse(c.x, c.y, o.rx*cam.zoom, o.ry*cam.zoom, 0, 0, Math.PI*2);
+  // The canvas ellipse takes a screen-space rotation, which is exactly the
+  // view tilt for a world-axis-aligned ellipse.
+  tctx.beginPath(); tctx.ellipse(c.x, c.y, o.rx*cam.zoom, o.ry*cam.zoom, cam.rot, 0, Math.PI*2);
   if (o.fill) tctx.fill();
   if (o.stroke !== false) tctx.stroke();
   tctx.restore();
@@ -3097,7 +3668,9 @@ function drawTextObj(tctx, o, isLive) {
   tctx.font = Math.max(o.size*cam.zoom, 4) + 'px ' + (o.font || 'Syne, sans-serif');
   tctx.textAlign = o.align || 'left';
   tctx.textBaseline = 'alphabetic';
-  if (o.rot) { tctx.translate(s.x, s.y); tctx.rotate(-o.rot*Math.PI/180); tctx.fillText(o.text,0,0); }
+  // Text rides the sheet: its own rotation plus the view tilt.
+  const screenRot = cam.rot - (o.rot||0)*Math.PI/180;
+  if (screenRot) { tctx.translate(s.x, s.y); tctx.rotate(screenRot); tctx.fillText(o.text,0,0); }
   else tctx.fillText(o.text, s.x, s.y);
   tctx.restore();
 }
@@ -3386,14 +3959,15 @@ function drawSelection() {
   if (!o) return;
   const b = objBounds(o);
   if (!b) return;
-  const tl = W2S(b.minX, b.maxY), br = W2S(b.maxX, b.minY);
+  // The marquee follows the object's box through the transform, so it stays
+  // on the object when the view is tilted.
+  const q = [W2S(b.minX,b.minY), W2S(b.maxX,b.minY), W2S(b.maxX,b.maxY), W2S(b.minX,b.maxY)];
   ctx.save();
   ctx.strokeStyle = 'rgba(0,212,255,0.9)'; ctx.lineWidth = 1; ctx.setLineDash([5,4]);
-  ctx.strokeRect(tl.x-3, tl.y-3, (br.x-tl.x)+6, (br.y-tl.y)+6);
+  ctx.beginPath(); quadPath(ctx, q); ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = 'rgba(0,212,255,0.9)';
-  [[tl.x-3,tl.y-3],[br.x+3,tl.y-3],[tl.x-3,br.y+3],[br.x+3,br.y+3]]
-    .forEach(([x,y]) => ctx.fillRect(x-2.5,y-2.5,5,5));
+  for (const p of q) ctx.fillRect(p.x-2.5, p.y-2.5, 5, 5);
   ctx.restore();
 }
 function objBounds(o) {
@@ -3422,7 +3996,7 @@ function resizeRulers() {
   rulerV.height = Math.round(rulerV.clientHeight*DPR);
 }
 function drawRulers() {
-  if (mode !== 'kanvas' || !showRulers || !rulerH || !rulerH.width) return;
+  if (mode !== 'kanvas' || !showRulers || cam.rot || !rulerH || !rulerH.width) return;
   const hc = rulerH.getContext('2d'), vc = rulerV.getContext('2d');
   hc.setTransform(DPR,0,0,DPR,0,0); vc.setTransform(DPR,0,0,DPR,0,0);
   const HW = rulerH.width/DPR, VH = rulerV.height/DPR, RS = 18;
@@ -3482,6 +4056,7 @@ function serializeDoc() {
       name: s.name, paper: s.paper, orient: s.orient,
       objects: s.mem.objects, layers: s.mem.layers,
       activeLayer: s.mem.activeLayer, nextId: s.mem.nextId, cam: s.cam,
+      ref: s.ref, artK: s.artK,
       ...(s.mem.viewport ? { viewport: s.mem.viewport } : {}),
     })),
     view:  { grid: showGrid, snap: snapEnabled, rulers: showRulers },
@@ -3522,6 +4097,9 @@ function deserializeDoc(text) {
         mem: normaliseMem(s),
         cam: s.cam || null,
         hist: blankHist(),
+        ref: s.ref || paperTrim({ paper: PAPERS[s.paper] ? s.paper : 'a4',
+                                  orient: s.orient === 'l' ? 'l' : 'p' }),
+        artK: s.artK != null ? s.artK : 1,
       });
       sheetSeq++;
     }
@@ -3529,7 +4107,7 @@ function deserializeDoc(text) {
     KREATE.hist = blankHist();
     sheetIdx = Math.min(d.activeSheet || 0, SHEETS.length - 1);
     setMode(d.mode === 'kreate' ? 'kreate' : 'kanvas');
-    applySpace(); zoomFit();
+    applySpace(); zoomFit(true);
     toast('Opened ' + SHEETS.length + ' sheet' + (SHEETS.length>1?'s':''));
     return true;
   }
@@ -3542,10 +4120,11 @@ function deserializeDoc(text) {
     name: d.sheetName || ('Sheet ' + sheetSeq),
     paper: paper.key, orient: paper.orient,
     mem: normaliseMem(d), cam: null, hist: blankHist(),
+    ref: paperTrim({ paper:paper.key, orient:paper.orient }), artK: 1,
   });
   sheetSeq++; sheetIdx += 1;
   if (mode !== 'kanvas') setMode('kanvas');
-  applySpace(); zoomFit();
+  applySpace(); zoomFit(true);
   toast('Opened as ' + activeSheet().name);
   return true;
 }
@@ -3644,7 +4223,7 @@ function newDocument() {
   KREATE.mem = blankMem(); KREATE.cam = null; KREATE.hist = blankHist();
   ensureSheets();
   setMode('kanvas');
-  applySpace(); zoomFit();
+  applySpace(); zoomFit(true);
   toast('New document');
 }
 function clearSpace() {
@@ -4043,6 +4622,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '?')       { toggleKbd(); return; }
 
   const k = e.key.toLowerCase();
+  if (e.key === '0') { resetViewRot(); return; }
   if (k === 'f') { zoomFit(); return; }
   if (k === 'g') { toggleGrid(); return; }
   if (k === 's') { toggleSnap(); return; }
@@ -4060,7 +4640,29 @@ document.addEventListener('keyup', e => {
 /* ════════════════════════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════════════════════ */
-window.addEventListener('resize', () => { resizeCanvas(); });
+let lastW = 0, lastH = 0;
+function onViewportChange() {
+  measureView();
+  const w = CW(), h = CH();
+  if (w < 40 || h < 40) return;
+  const changed = Math.abs(w - lastW) > 1 || Math.abs(h - lastH) > 1;
+  lastW = w; lastH = h;
+  resizeCanvas();
+  const holder = (mode === 'kreate') ? KREATE : activeSheet();
+  // Re-fit only a camera the user has not claimed. Someone who zoomed in on a
+  // detail keeps their zoom when the URL bar slides away; someone who has not
+  // touched the view gets the sheet re-centred to the new space.
+  if (fitPending || (changed && holder && !holder.camOwned)) zoomFit(true);
+}
+window.addEventListener('resize', onViewportChange);
+window.addEventListener('orientationchange', () => setTimeout(onViewportChange, 220));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportChange);
+if (window.ResizeObserver) {
+  // Catches layout shifts that never reach the window: drawers opening, the
+  // tab strip appearing, dvh settling after first paint.
+  try { new ResizeObserver(onViewportChange).observe(document.getElementById('stage')); }
+  catch (err) {}
+}
 
 function init() {
   ensureSheets();
@@ -4082,7 +4684,7 @@ function init() {
 
   setTool('brush');
   resizeCanvas();
-  zoomFit();
+  zoomFit(true);
   updateProps();
   scheduleDraw();
 
@@ -4092,8 +4694,13 @@ function init() {
 // Fonts change text metrics, and a first paint before they land measures the
 // fallback. One re-fit after they resolve avoids that.
 if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(() => { resizeCanvas(); scheduleDraw(); });
+  document.fonts.ready.then(() => { onViewportChange(); scheduleDraw(); });
 }
+// One more pass after the first frames. Mobile browsers report a stage that is
+// a URL-bar taller than what the user ends up with, and the fit computed
+// against that measurement is the one that looks too small.
+requestAnimationFrame(() => requestAnimationFrame(onViewportChange));
+setTimeout(onViewportChange, 260);
 init();
 
 </script>
