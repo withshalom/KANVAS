@@ -321,6 +321,50 @@ body.touch-mode #center-fab.show { display:flex; }
 /* Hand the pill the opposite corner so the two never collide. */
 body.touch-mode #page-pill { left:10px; right:auto; }
 
+/* ── SELECTION FABS (touch) ──
+   Delete and Escape have no keys on a phone, so a selection made by finger
+   could be made and then neither used nor dismissed. These appear only while
+   something is selected. Top-left, so they never fight CENTER for thumb
+   space in the opposite corner. */
+.sel-fab {
+  display:none;
+  position:fixed;
+  left: calc(10px + env(safe-area-inset-left, 0px));
+  z-index:210;
+  width:44px; height:44px; border-radius:50%;
+  align-items:center; justify-content:center;
+  background:var(--glass2);
+  box-shadow:0 8px 20px rgba(0,0,0,0.5);
+  cursor:pointer;
+  animation:fabIn .18s cubic-bezier(0.16,1,0.3,1);
+}
+.sel-fab svg { width:19px; height:19px; fill:none; stroke:currentColor;
+               stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.sel-fab:active { transform:scale(0.94); }
+#delete-fab {
+  top: calc(var(--th) + var(--tabh) + 52px + env(safe-area-inset-top, 0px));
+  border:1px solid rgba(255,68,102,0.55); color:var(--red);
+}
+#esc-fab {
+  top: calc(var(--th) + var(--tabh) + 104px + env(safe-area-inset-top, 0px));
+  border:1px solid var(--border-hi); color:var(--t2);
+}
+body.touch-mode .sel-fab.show { display:flex; }
+/* A selection count, so a marquee that caught more than you meant is
+   visible before you press Delete rather than after. */
+#sel-count {
+  display:none;
+  position:fixed;
+  left: calc(58px + env(safe-area-inset-left, 0px));
+  top:  calc(var(--th) + var(--tabh) + 63px + env(safe-area-inset-top, 0px));
+  z-index:210;
+  padding:3px 9px; border-radius:11px;
+  background:var(--glass2); border:1px solid var(--border);
+  font-family:var(--fm); font-size:10px; color:var(--t1);
+  pointer-events:none; white-space:nowrap;
+}
+body.touch-mode #sel-count.show { display:block; }
+
 /* Floating brush cursor ring */
 #brush-cursor {
   position:absolute; border-radius:50%; pointer-events:none; z-index:30;
@@ -1063,6 +1107,17 @@ kbd {
 
 </div>
 
+<!-- Delete / cancel for a touch selection. Shown by updateSelFabs(). -->
+<button id="delete-fab" class="sel-fab" onclick="deleteSelected()"
+        aria-label="Delete selection">
+  <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+</button>
+<button id="esc-fab" class="sel-fab" onclick="escFabTap()"
+        aria-label="Clear selection">
+  <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+</button>
+<div id="sel-count"></div>
+
 <!-- Floating CENTER — the touch way back to square. Shown by
      updateCenterFab() only while the view is actually off. -->
 <button id="center-fab" onclick="centerView()" aria-label="Centre and straighten the view">
@@ -1119,6 +1174,7 @@ kbd {
         <div class="kbd-line"><span>Dimension</span><kbd>D</kbd></div>
         <div class="kbd-line"><span>Erase</span><kbd>X</kbd></div>
         <div class="kbd-line"><span>Select</span><kbd>V</kbd></div>
+        <div class="kbd-line"><span>Add to selection</span><kbd>&#8679; tap</kbd></div>
         <div class="kbd-line"><span>Eyedropper</span><kbd>I</kbd></div>
       </div>
       <div class="kbd-col">
@@ -1141,6 +1197,8 @@ kbd {
         <div class="kbd-line"><span>Reveal tools</span><kbd>1 hold</kbd></div>
         <div class="kbd-line"><span>Tilt view</span><kbd>2 twist</kbd></div>
         <div class="kbd-line"><span>Back to square</span><kbd>CENTER</kbd></div>
+        <div class="kbd-line"><span>Select by contact</span><kbd>tap</kbd></div>
+        <div class="kbd-line"><span>Selection box</span><kbd>swipe</kbd></div>
         <div class="kbd-line"><span>Straight line</span><kbd>tap, tap</kbd></div>
       </div>
       <div class="kbd-col">
@@ -1380,7 +1438,7 @@ function undo() {
   if (!HIST || !HIST.u.length) { toast('Nothing to undo'); return; }
   HIST.r.push(JSON.stringify(MEM.objects));
   MEM.objects = JSON.parse(HIST.u.pop());
-  selectedId = null;
+  selectedIds.clear();
   rebuildEraseCanvas(); buildLayerList(); updateProps(); scheduleDraw();
   toast('Undo');
 }
@@ -1388,7 +1446,7 @@ function redo() {
   if (!HIST || !HIST.r.length) { toast('Nothing to redo'); return; }
   HIST.u.push(JSON.stringify(MEM.objects));
   MEM.objects = JSON.parse(HIST.r.pop());
-  selectedId = null;
+  selectedIds.clear();
   rebuildEraseCanvas(); buildLayerList(); updateProps(); scheduleDraw();
   toast('Redo');
 }
@@ -1529,6 +1587,30 @@ function nudgeViewRot(deg) {
 // orientation the sheet is already in. Handing the camera back to automatic is
 // part of it — after CENTER the view should track the sheet again rather than
 // stay pinned wherever a gesture left it.
+// Shown purely on there being a selection — deleting one is not tied to a
+// tool being mid-action the way Escape and Commit are in KAD.
+function updateSelFabs() {
+  const n = selectedIds ? selectedIds.size : 0;
+  const del = document.getElementById('delete-fab');
+  const esc = document.getElementById('esc-fab');
+  const cnt = document.getElementById('sel-count');
+  if (del) del.classList.toggle('show', n > 0);
+  if (esc) esc.classList.toggle('show', n > 0);
+  if (cnt) {
+    cnt.classList.toggle('show', n > 0);
+    cnt.textContent = n + (n === 1 ? ' object' : ' objects');
+  }
+}
+function escFabTap() {
+  // Whatever is in progress first, then the selection — the same order
+  // Escape resolves in on a keyboard.
+  if (isDrawing || arcPts.length || penAnchors.length || pendingPt || dimState) {
+    cancelPending(); scheduleDraw(); toast('Cancelled'); return;
+  }
+  if (clearSelection()) { toast('Selection cleared'); return; }
+  toast('Nothing to cancel');
+}
+
 function centerView() {
   cancelSettle();
   setViewRot(0, true);
@@ -1709,7 +1791,7 @@ function goSheet(i) {
   if (i === sheetIdx || !SHEETS[i]) return;
   commitSpace();
   sheetIdx = i;
-  selectedId = null;
+  selectedIds.clear();
   applySpace();
   toast(SHEETS[i].name + ' \u00b7 ' + paperDim(SHEETS[i]));
 }
@@ -1724,7 +1806,7 @@ function addSheet(paperKey, orient) {
   SHEETS.splice(sheetIdx + 1, 0,
     newSheet(paperKey || (cur ? cur.paper : 'a4'), orient || (cur ? cur.orient : 'p')));
   sheetIdx += 1;
-  selectedId = null;
+  selectedIds.clear();
   applySpace(); zoomFit(true);
   toast('Added ' + activeSheet().name + ' \u00b7 ' + paperDim(activeSheet()));
 }
@@ -1758,7 +1840,7 @@ function deleteSheet() {
   if (n && !confirm('Delete ' + s.name + '?\n\n' + n + ' object' + (n>1?'s':'') + ' on this sheet will be lost.')) return;
   SHEETS.splice(sheetIdx, 1);
   sheetIdx = Math.min(sheetIdx, SHEETS.length - 1);
-  selectedId = null;
+  selectedIds.clear();
   applySpace();
   toast('Sheet deleted');
 }
@@ -2297,7 +2379,17 @@ function arcPoint(a, t) {
    GRID / SNAP / TOOL STATE
    ═══════════════════════════════════════════════════════════════════════════ */
 let showGrid = true, snapEnabled = true, showRulers = true;
-let selectedId = null;
+// Hairlines earn their place where you are aiming a point at something —
+// never during freehand, where they would sit on top of the drawing you are
+// trying to see and tell you nothing the brush ring does not.
+const CROSSHAIR_TOOLS = new Set(['line','arc','circle','kompass','rect','ellipse',
+                                 'polygon','pen','dim-linear','dim-radial','select']);
+let cursorSeen = false;
+let selectedIds = new Set();
+// Marquee. `pending` covers the gap between pressing and travelling far
+// enough to mean a drag rather than a tap.
+const selBox = { active:false, pending:false, sx:0, sy:0, wx:0, wy:0 };
+const SELBOX_SLOP = 6;
 
 function toggleGrid()   { showGrid = !showGrid;
   document.getElementById('btn-grid').classList.toggle('on', showGrid);
@@ -2359,6 +2451,10 @@ const TOOL_LABEL = {
 
 function setTool(t) {
   if (mode === 'kreate' && t.startsWith('dim-')) { toast('Dimensions live on sheets'); return; }
+  // Selection is exclusive to Select. Leaving the tool is the clearest
+  // statement that you are done with the selection, and keeping it would
+  // leave marquee handles floating over unrelated work.
+  if (tool === 'select' && t !== 'select' && selectedIds.size) selectedIds.clear();
   tool = t;
   cancelPending();
   document.querySelectorAll('.tbtn').forEach(b =>
@@ -2374,6 +2470,7 @@ function setTool(t) {
 function cancelPending() {
   anchorA = anchorB = null; arcPts = []; penAnchors = [];
   arcPendingMid = false; pendingPt = null; cancelHold();
+  selBox.pending = false; selBox.active = false;
   dimState = null; kompassCenter = null;
   isDrawing = false; rawPts = []; livePts = []; liveErase = [];
   hideTextInput();
@@ -2412,7 +2509,10 @@ canvas.addEventListener('pointerdown', onDown);
 canvas.addEventListener('pointermove', onMove);
 canvas.addEventListener('pointerup', onUp);
 canvas.addEventListener('pointercancel', onUp);
-canvas.addEventListener('pointerleave', () => { bcEl.style.display='none'; });
+canvas.addEventListener('pointerleave', () => {
+  bcEl.style.display='none';
+  cursorSeen = false; scheduleDraw();     // hairlines follow the pointer out
+});
 canvas.addEventListener('pointerenter', updateBrushCursor);
 canvas.addEventListener('dblclick', onDbl);
 canvas.addEventListener('wheel', onWheel, { passive:false });
@@ -2478,6 +2578,9 @@ let strokeMoved = false;
 // The matching snap() already went onto the undo stack in onDown, so it is
 // popped back off: a gesture must not leave a phantom step in history.
 function abortDrawing() {
+  if (selBox.pending || selBox.active) {
+    selBox.pending = false; selBox.active = false; scheduleDraw();
+  }
   if (!isDrawing) return;
   isDrawing = false;
   rawPts = []; livePts = []; liveErase = [];
@@ -2565,7 +2668,13 @@ function onDown(e) {
       else { commitDim(dimState.p1, sp); dimState = null; }
       break;
     }
-    case 'select': { selectNear(w); break; }
+    case 'select': {
+      // Armed, not started: a tap and a drag begin identically, and only
+      // travel tells them apart.
+      selBox.pending = true; selBox.active = false;
+      selBox.sx = s.x; selBox.sy = s.y; selBox.wx = w.x; selBox.wy = w.y;
+      break;
+    }
     case 'eyedrop': { pickFromCanvas(s); setTool('brush'); break; }
   }
   scheduleDraw();
@@ -2583,6 +2692,7 @@ function onMove(e) {
     if (Math.hypot(w.x-f.x, w.y-f.y) * cam.zoom > HOLD_SLOP) strokeMoved = true;
   }
   moveBrushCursor(s.x, s.y);
+  cursorSeen = true;
   txt('sb-x', w.x.toFixed(1)); txt('sb-y', w.y.toFixed(1));
 
   if (isPanning) {
@@ -2609,12 +2719,34 @@ function onMove(e) {
     return;
   }
 
+  if (selBox.pending && !selBox.active &&
+      Math.hypot(s.x - selBox.sx, s.y - selBox.sy) > SELBOX_SLOP) {
+    selBox.active = true;
+    cancelHold();                       // a drag is not a hold
+  }
+  if (selBox.active) { scheduleDraw(); return; }
+
   // Live preview for the click-to-place tools
-  if (arcPts.length || penAnchors.length || dimState || tool === 'circle') scheduleDraw();
+  if (arcPts.length || penAnchors.length || dimState || tool === 'circle' ||
+      CROSSHAIR_TOOLS.has(tool)) scheduleDraw();
 }
 
 function onUp(e) {
   cancelHold();
+  if (selBox.pending) {
+    const wasBox = selBox.active;
+    selBox.pending = false; selBox.active = false;
+    if (e.pointerType !== 'touch' || touchIds.size <= 1) {
+      const s2 = spt(e), w2 = S2W(s2.x, s2.y);
+      // Shift, or a second finger's worth of intent, adds to the selection
+      // instead of replacing it.
+      if (wasBox) commitSelBox(w2, e.shiftKey);
+      else selectNear(w2, e.shiftKey);
+    }
+    scheduleDraw();
+    if (e.pointerType === 'touch') touchIds.delete(e.pointerId);
+    return;
+  }
   if (e.pointerType === 'touch') {
     touchIds.delete(e.pointerId);
     // A gesture consumed these contacts; there is nothing of the pointer
@@ -3114,9 +3246,17 @@ function onTextKey(e) {
 }
 
 /* ── Selection / erase-by-object ─────────────────────────────────────────── */
+// Touch needs a wider catch than a mouse: a fingertip is about 9mm across and
+// cannot be aimed to the pixel.
+function pickTol(px) {
+  const base = px || (document.body.classList.contains('touch-mode') ? 18 : 10);
+  return base / cam.zoom;
+}
 function objNear(w, tolPx) {
-  const tol = (tolPx || 10) / cam.zoom;
+  const tol = pickTol(tolPx);
   const list = visibleObjects();
+  // Topmost among those actually hit, so stacking order still decides ties,
+  // but a near miss on the top object no longer shadows a clean hit below it.
   for (let i = list.length-1; i >= 0; i--) {
     const o = list[i];
     if (o.type === 'erase') continue;
@@ -3124,33 +3264,95 @@ function objNear(w, tolPx) {
   }
   return null;
 }
+// Distance from a point to a chain of points, treated as connected segments.
+// This is the difference between "touch the line" and "touch a vertex".
+function distToChain(w, pts, closed) {
+  if (!pts || !pts.length) return Infinity;
+  if (pts.length === 1) return Math.hypot(pts[0].x-w.x, pts[0].y-w.y);
+  let best = Infinity;
+  const n = pts.length, segs = closed ? n : n-1;
+  for (let i = 0; i < segs; i++) {
+    const d = distToSeg(w, pts[i], pts[(i+1) % n]);
+    if (d < best) best = d;
+  }
+  return best;
+}
+// Beziers are flattened for the test. Sampling is honest here: a closed-form
+// distance to a cubic is a quartic root-find, and at the tolerances a finger
+// works to it would not change a single answer.
+function distToBeziers(w, bz, closed) {
+  if (!bz || !bz.length) return Infinity;
+  const pts = [{ x:bz[0].x0, y:bz[0].y0 }];
+  for (const b of bz) for (let i = 1; i <= 8; i++) pts.push(evalBez(b, i/8));
+  return distToChain(w, pts, closed);
+}
+function distToArc(w, o) {
+  const dx = w.x - o.cx, dy = w.y - o.cy;
+  const d = Math.hypot(dx, dy);
+  const radial = Math.abs(d - o.r);
+  if (o.full || arcSweep(o) >= Math.PI*2 - 1e-6) return radial;
+  // Only counts if the angle actually falls inside the sweep; otherwise the
+  // nearest endpoint governs, or a 20-degree arc would be selectable all the
+  // way round its circle.
+  let a = Math.atan2(dy, dx);
+  const sweep = arcSweep(o);
+  let rel = o.ccw ? (a - o.a0) : (o.a0 - a);
+  rel = ((rel % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  if (rel <= sweep) return radial;
+  const e0 = arcPoint(o, 0), e1 = arcPoint(o, 1);
+  return Math.min(Math.hypot(w.x-e0.x, w.y-e0.y), Math.hypot(w.x-e1.x, w.y-e1.y));
+}
+
 function hitTest(o, w, tol) {
-  const near = (x,y) => Math.hypot(x-w.x, y-w.y) <= tol;
   switch (o.type) {
-    case 'stroke': case 'poly':
-      return (o.pts||[]).some(p => near(p.x,p.y));
+    case 'stroke':
+      // Half the ink width counts as the object: a fat stroke should be
+      // catchable anywhere it is actually dark.
+      return distToChain(w, o.pts, false) <= tol + (o.size || 0)/2;
+    case 'poly':
+      if (o.fill && pointInPoly(w, o.pts)) return true;
+      return distToChain(w, o.pts, o.closed) <= tol;
     case 'path':
-      return (o.beziers||[]).some(b => near(b.x0,b.y0) || near(b.x3,b.y3));
+      return distToBeziers(w, o.beziers, o.closed) <= tol + (o.width||0)/2;
     case 'line':
-      return distToSeg(w, {x:o.x1,y:o.y1}, {x:o.x2,y:o.y2}) <= tol;
-    case 'arc': {
-      const d = Math.abs(Math.hypot(w.x-o.cx, w.y-o.cy) - o.r);
-      return d <= tol;
-    }
+      return distToSeg(w, {x:o.x1,y:o.y1}, {x:o.x2,y:o.y2}) <= tol + (o.width||0)/2;
+    case 'arc':
+      if (o.fill && Math.hypot(w.x-o.cx, w.y-o.cy) <= o.r) return true;
+      return distToArc(w, o) <= tol + (o.width||0)/2;
     case 'ellipse': {
-      const dx=(w.x-o.cx)/(o.rx||1), dy=(w.y-o.cy)/(o.ry||1);
-      const k = Math.hypot(dx,dy);
-      return Math.abs(k-1) <= tol/Math.max(o.rx,o.ry,1);
+      const rx = Math.max(o.rx, 1e-6), ry = Math.max(o.ry, 1e-6);
+      const dx = (w.x-o.cx)/rx, dy = (w.y-o.cy)/ry;
+      const k = Math.hypot(dx, dy);
+      if (o.fill && k <= 1) return true;
+      // Scale the parametric error back into millimetres so the tolerance
+      // means the same thing on a fat ellipse as on a thin one.
+      return Math.abs(k - 1) * Math.min(rx, ry) <= tol + (o.width||0)/2;
     }
-    case 'rect':
-      return w.x >= o.x-tol && w.x <= o.x+o.w+tol && w.y >= o.y-tol && w.y <= o.y+o.h+tol;
+    case 'rect': {
+      const inside = w.x >= o.x && w.x <= o.x+o.w && w.y >= o.y && w.y <= o.y+o.h;
+      if (o.fill && inside) return true;
+      const corners = [{x:o.x,y:o.y},{x:o.x+o.w,y:o.y},
+                       {x:o.x+o.w,y:o.y+o.h},{x:o.x,y:o.y+o.h}];
+      return distToChain(w, corners, true) <= tol + (o.width||0)/2;
+    }
     case 'text':
       return w.x >= o.x-tol && w.x <= o.x + o.text.length*o.size*0.6 + tol
           && w.y >= o.y-tol && w.y <= o.y + o.size + tol;
     case 'dim': case 'weld':
-      return (o.p1 && near(o.p1.x,o.p1.y)) || (o.p2 && near(o.p2.x,o.p2.y));
+      if (!o.p1 || !o.p2) return false;
+      return distToSeg(w, o.p1, o.p2) <= tol;
   }
   return false;
+}
+function pointInPoly(w, pts) {
+  if (!pts || pts.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = pts.length-1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    if ((a.y > w.y) !== (b.y > w.y) &&
+        w.x < (b.x-a.x) * (w.y-a.y) / (b.y-a.y) + a.x) inside = !inside;
+  }
+  return inside;
 }
 function distToSeg(p, a, b) {
   const dx=b.x-a.x, dy=b.y-a.y, l2=dx*dx+dy*dy;
@@ -3159,25 +3361,84 @@ function distToSeg(p, a, b) {
   t = Math.max(0, Math.min(1, t));
   return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
 }
-function selectNear(w) {
+function selectNear(w, additive) {
   const o = objNear(w);
-  selectedId = o ? o.id : null;
-  updateProps(); scheduleDraw();
-  if (o) toast(o.type.toUpperCase() + ' selected');
+  if (!additive) selectedIds.clear();
+  if (o) {
+    // Tapping something already selected removes it, which is the only way to
+    // correct a mistake without starting the selection over.
+    if (additive && selectedIds.has(o.id)) selectedIds.delete(o.id);
+    else selectedIds.add(o.id);
+  }
+  updateProps(); updateSelFabs(); scheduleDraw();
+  if (o) toast(selectedIds.size > 1 ? (selectedIds.size + ' selected')
+                                    : (o.type.toUpperCase() + ' selected'));
+  else if (!additive) toast('Selection cleared');
+}
+
+// ── MARQUEE ──
+// Window (dragged rightwards): the object must be wholly inside.
+// Crossing (dragged leftwards): touching the box is enough.
+// The asymmetry is AutoCAD's and KAD's, and it is worth keeping: it is the
+// difference between "these four" and "everything through here".
+function boxOf(a, b) {
+  return { lx:Math.min(a.x,b.x), rx:Math.max(a.x,b.x),
+           by:Math.min(a.y,b.y), ty:Math.max(a.y,b.y) };
+}
+function objBoxTest(o, box, crossing) {
+  const b = objBounds(o);
+  if (!b) return false;
+  const inside = b.minX >= box.lx && b.maxX <= box.rx &&
+                 b.minY >= box.by && b.maxY <= box.ty;
+  if (!crossing) return inside;
+  if (inside) return true;                     // crossing takes contained too
+  if (b.maxX < box.lx || b.minX > box.rx || b.maxY < box.by || b.minY > box.ty) return false;
+  // Walk the box outline against the object's own hit test. Cheaper than
+  // per-primitive intersection maths, and it reuses the tested path — so the
+  // marquee cannot disagree with what a tap on the same spot would catch.
+  const step = Math.max(box.rx-box.lx, box.ty-box.by) / 24 || 1;
+  const tol = pickTol();
+  for (let x = box.lx; x <= box.rx; x += step)
+    if (hitTest(o, {x, y:box.by}, tol) || hitTest(o, {x, y:box.ty}, tol)) return true;
+  for (let y = box.by; y <= box.ty; y += step)
+    if (hitTest(o, {x:box.lx, y}, tol) || hitTest(o, {x:box.rx, y}, tol)) return true;
+  // An object spanning the whole box crosses it without touching the outline
+  // at any sampled point.
+  return b.minX <= box.lx && b.maxX >= box.rx && b.minY <= box.by && b.maxY >= box.ty;
+}
+function commitSelBox(endW, additive) {
+  const box = boxOf({ x:selBox.wx, y:selBox.wy }, endW);
+  const crossing = endW.x < selBox.wx;
+  if (!additive) selectedIds.clear();
+  let n = 0;
+  for (const o of visibleObjects()) {
+    if (o.type === 'erase') continue;
+    if (objBoxTest(o, box, crossing)) { selectedIds.add(o.id); n++; }
+  }
+  updateProps(); updateSelFabs(); scheduleDraw();
+  toast(n ? (n + ' selected \u00b7 ' + (crossing ? 'crossing' : 'window'))
+          : 'Nothing in the box');
+}
+function clearSelection() {
+  if (!selectedIds.size) return false;
+  selectedIds.clear();
+  updateProps(); updateSelFabs(); scheduleDraw();
+  return true;
 }
 function deleteSelected() {
-  if (selectedId == null) { toast('Nothing selected'); return; }
+  if (!selectedIds.size) { toast('Nothing selected'); return; }
   snap();
-  MEM.objects = MEM.objects.filter(o => o.id !== selectedId);
-  selectedId = null;
-  rebuildEraseCanvas(); updateProps(); scheduleDraw();
-  toast('Deleted');
+  const n = selectedIds.size;
+  MEM.objects = MEM.objects.filter(o => !selectedIds.has(o.id));
+  selectedIds.clear();
+  rebuildEraseCanvas(); updateProps(); updateSelFabs(); scheduleDraw();
+  toast('Deleted ' + n + ' object' + (n > 1 ? 's' : ''));
 }
 function eraseObjectAt(w) {
   const o = objNear(w, 12);
   if (!o) return;
   MEM.objects = MEM.objects.filter(x => x.id !== o.id);
-  if (selectedId === o.id) selectedId = null;
+  selectedIds.delete(o.id);
   rebuildEraseCanvas(); updateProps(); scheduleDraw();
 }
 function pickFromCanvas(s) {
@@ -3253,6 +3514,7 @@ function render() {
   drawRulers();
   commitCam();
   updateCenterFab();
+  updateSelFabs();
 }
 
 // Committed art. Drawn straight into the frame whenever it can be, because
@@ -3262,7 +3524,13 @@ function drawArt() {
   let hasErase = false;
   for (const o of objs) if (o.type === 'erase') { hasErase = true; break; }
 
-  if (!hasErase) {
+  // The stroke being dragged right now, so erasing is visible as it happens
+  // rather than only on release.
+  const live = (isDrawing && tool === 'erase' && !ER.objectMode && liveErase.length)
+    ? { pts: liveErase, size: ER.size / cam.zoom, hardness: ER.hardness }
+    : null;
+
+  if (!hasErase && !live) {
     for (const o of objs) drawObject(ctx, o, false);
     return;
   }
@@ -3270,7 +3538,7 @@ function drawArt() {
   // Erasures need destination-out against the ink alone, so ink goes to an
   // offscreen buffer, gets cut, and is composited over the sheet. Rebuilt HERE,
   // in the frame that uses it, because it is a function of the camera.
-  rebuildEraseCanvas();
+  rebuildEraseCanvas(live);
   ctx.save();
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(eraseC, 0, 0);
@@ -3358,10 +3626,10 @@ function drawInfinite(W,H) {
 // Called by drawArt each frame it is needed, and harmlessly by the various
 // content-changed paths. Cheap-exits when nothing erases, which is the common
 // case now that art no longer routes through here.
-function rebuildEraseCanvas() {
+function rebuildEraseCanvas(live) {
   const W = Math.round(CW()*DPR), H = Math.round(CH()*DPR);
   if (!W || !H) return;
-  if (!MEM || !MEM.objects.some(o => o.type === 'erase')) {
+  if (!MEM || (!live && !MEM.objects.some(o => o.type === 'erase'))) {
     if (eraseC.width) { eraseCtx.setTransform(1,0,0,1,0,0); eraseCtx.clearRect(0,0,eraseC.width,eraseC.height); }
     return;
   }
@@ -3374,6 +3642,8 @@ function rebuildEraseCanvas() {
     if (o.type === 'erase') paintErase(eraseCtx, o.pts, o.size, o.hardness);
     else drawObject(eraseCtx, o, false);
   }
+  // Applied last, so it cuts everything already laid down.
+  if (live) paintErase(eraseCtx, live.pts, live.size, live.hardness);
 }
 function paintErase(tctx, pts, size, hardness) {
   if (!pts || !pts.length) return;
@@ -3752,22 +4022,48 @@ function labelBox(tctx, s, x, y) {
 }
 
 /* ── Live previews ───────────────────────────────────────────────────────── */
+// Full-height hairlines through the aim point, snap-aware so they agree with
+// the coordinate readout rather than with the raw finger position.
+function drawCrosshair() {
+  if (!cursorSeen || isPanning || DUO.mode) return;
+  if (!CROSSHAIR_TOOLS.has(tool)) return;
+  const W = CW(), H = CH();
+  const p = W2S(snapPt(mw.x, mw.y).x, snapPt(mw.x, mw.y).y);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,212,255,0.28)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  if (cam.rot) {
+    // Follow the sheet axes when the view is tilted, or the hairlines would
+    // measure against the screen and contradict the grid they sit on.
+    const d = (W + H) * 1.5;
+    const co = Math.cos(cam.rot), si = Math.sin(cam.rot);
+    ctx.moveTo(p.x - co*d, p.y - si*d); ctx.lineTo(p.x + co*d, p.y + si*d);
+    ctx.moveTo(p.x + si*d, p.y - co*d); ctx.lineTo(p.x - si*d, p.y + co*d);
+  } else {
+    ctx.moveTo(p.x, 0); ctx.lineTo(p.x, H);
+    ctx.moveTo(0, p.y); ctx.lineTo(W, p.y);
+  }
+  ctx.stroke();
+  if (snapEnabled) {
+    ctx.strokeStyle = 'rgba(0,212,255,0.55)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawLive() {
+  drawCrosshair();
   // In-progress freehand
   if (isDrawing && livePts.length > 1 && ['brush','pencil','shade'].includes(tool)) {
     drawStroke(ctx, { type:'stroke', mode:tool, pts:livePts, color:B.color,
                       size:B.size/cam.zoom, opacity:B.opacity, blend:B.blend,
                       glow:B.glow, id:0 }, true);
   }
-  if (isDrawing && liveErase.length && tool === 'erase') {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,68,102,0.5)';
-    ctx.lineWidth = Math.max(ER.size, 2); ctx.lineCap = 'round';
-    ctx.beginPath();
-    const p0 = W2S(liveErase[0].x, liveErase[0].y); ctx.moveTo(p0.x,p0.y);
-    for (const p of liveErase) { const s = W2S(p.x,p.y); ctx.lineTo(s.x,s.y); }
-    ctx.stroke(); ctx.restore();
-  }
+  // No eraser preview here on purpose: an eraser that draws a coloured trail
+  // is announcing itself like ink. drawArt applies the stroke live instead,
+  // so the feedback is the ink actually going away.
 
   const st = () => Object.assign(baseStyle(), { opacity:SH.opacity*0.75 });
 
@@ -3954,9 +4250,31 @@ function drawKompassRig(center, at, r) {
 
 /* ── Selection overlay ───────────────────────────────────────────────────── */
 function drawSelection() {
-  if (selectedId == null) return;
-  const o = MEM.objects.find(x => x.id === selectedId);
-  if (!o) return;
+  for (const id of selectedIds) {
+    const o = MEM.objects.find(x => x.id === id);
+    if (o) drawSelectionOf(o);
+  }
+  drawSelBox();
+}
+// The live marquee. Colour carries the mode, so which rule is in force is
+// visible while you drag rather than only in the toast afterwards.
+function drawSelBox() {
+  if (!selBox.active) return;
+  const a = W2S(selBox.wx, selBox.wy), b = W2S(mw.x, mw.y);
+  const crossing = mw.x < selBox.wx;
+  ctx.save();
+  ctx.strokeStyle = crossing ? 'rgba(0,255,163,0.9)'  : 'rgba(0,212,255,0.9)';
+  ctx.fillStyle   = crossing ? 'rgba(0,255,163,0.07)' : 'rgba(0,212,255,0.07)';
+  ctx.lineWidth = 1;
+  if (crossing) ctx.setLineDash([5,4]);
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(a.x,b.y);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+function drawSelectionOf(o) {
   const b = objBounds(o);
   if (!b) return;
   // The marquee follows the object's box through the transform, so it stays
@@ -4230,7 +4548,7 @@ function clearSpace() {
   if (!MEM.objects.length) { toast('Already empty'); return; }
   if (!confirm('Clear every object in this space?')) return;
   snap();
-  MEM.objects = []; selectedId = null;
+  MEM.objects = []; selectedIds.clear();
   rebuildEraseCanvas(); updateProps(); scheduleDraw();
   toast('Cleared');
 }
@@ -4540,7 +4858,8 @@ function updateProps() {
   txt('p-arcs',    String(MEM.objects.filter(o => o.type === 'arc').length));
   txt('p-hist',    (HIST ? HIST.u.length : 0) + ' / ' + (HIST ? HIST.r.length : 0));
 
-  const o = selectedId != null ? MEM.objects.find(x => x.id === selectedId) : null;
+  const o = (selectedIds.size === 1)
+    ? MEM.objects.find(x => selectedIds.has(x.id)) : null;
   txt('s-type',  o ? o.type.toUpperCase() : '\u2014');
   txt('s-layer', o ? (o.layer || '\u2014') : '\u2014');
   let detail = '\u2014';
@@ -4614,7 +4933,7 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  if (e.key === 'Escape')  { cancelPending(); selectedId = null;
+  if (e.key === 'Escape')  { cancelPending(); selectedIds.clear();
                              closePaperPicker(); document.getElementById('kbd-modal').classList.remove('on');
                              updateProps(); scheduleDraw(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); return; }
