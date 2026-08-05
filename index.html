@@ -318,6 +318,36 @@ body.touch-mode #center-fab.show { display:flex; }
   from { opacity:0; transform:translateY(8px) scale(0.94); }
   to   { opacity:1; transform:none; }
 }
+
+/* ── FLOATING COMMIT BUTTON ──
+   The touch "Enter" for a tap sequence — directly modelled on KAD's own
+   COMMIT fab for LINE. Kompass is taps, not a drag, so once the radius is
+   locked there is no release to finish the gesture on; COMMIT (or a third
+   tap) is how a touch user says "use the sweep as it stands right now".
+   Stacked directly above CENTER, same corner, same reasoning: shown only at
+   the moment it would do something. */
+#kompass-commit-fab {
+  display:none;
+  position:fixed;
+  right:  calc(12px + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--sh) + 14px + 52px + env(safe-area-inset-bottom, 0px));
+  z-index:221;
+  align-items:center; gap:7px;
+  height:42px; padding:0 16px; border-radius:21px;
+  background:var(--green); border:1px solid var(--green);
+  color:var(--void);
+  font-family:var(--fm); font-size:12px; font-weight:500; letter-spacing:0.1em;
+  box-shadow:0 8px 24px rgba(0,0,0,0.55);
+  cursor:pointer; white-space:nowrap;
+  animation:fabIn .18s cubic-bezier(0.16,1,0.3,1);
+}
+#kompass-commit-fab svg {
+  width:16px; height:16px; flex-shrink:0;
+  fill:none; stroke:currentColor; stroke-width:2.1;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+#kompass-commit-fab:active { transform:scale(0.96); }
+body.touch-mode #kompass-commit-fab.show { display:flex; }
 /* Hand the pill the opposite corner so the two never collide. */
 body.touch-mode #page-pill { left:10px; right:auto; }
 
@@ -427,7 +457,7 @@ body.touch-mode #sel-count.show { display:block; }
 .tbtn .tl { font-family:var(--fm); font-size:7px; letter-spacing:0.04em; }
 
 /* ── Input row: the four ways to specify a mark ── */
-.input-row { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; padding:0 9px 8px; }
+.input-row { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; padding:0 9px 8px; }
 .in-btn {
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
   padding:7px 2px; border-radius:7px;
@@ -893,6 +923,9 @@ kbd {
         <button class="in-btn" data-input="circle" onclick="setInput('circle')" title="Circle \u2014 centre and radius (C)">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.4"/></svg><span>Circle</span>
         </button>
+        <button class="in-btn" data-input="kompass" onclick="setInput('kompass')" title="Kompass \u2014 pivot, then swing (K)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"/><path d="M12 6.5 5 20"/><path d="M12 6.5 19 20"/><path d="M7.5 17a7 7 0 0 0 9 0"/></svg><span>Kompass</span>
+        </button>
         <button class="in-btn" data-input="bezier" onclick="setInput('bezier')" title="Bezier \u2014 place points (P)">
           <svg viewBox="0 0 24 24"><path d="M4 20c0-9 16-9 16-16"/><rect x="2" y="18" width="4" height="4"/><rect x="18" y="2" width="4" height="4"/></svg><span>Bezier</span>
         </button>
@@ -1062,6 +1095,17 @@ kbd {
         </div>
       </div>
 
+      <div class="sec">Grid</div>
+      <div class="sec-body">
+        <div class="btn-row">
+          <button class="mini" id="grid-toggle-btn" onclick="toggleGrid()"
+                  title="Show a fixed grid on this sheet (G)">Grid off</button>
+          <button class="mini" onclick="openGridPrompt()" title="Choose the grid size">
+            Size&#8230;
+          </button>
+        </div>
+      </div>
+
       <div class="sec">View angle <span class="sec-hint" id="view-angle-hint">square</span></div>
       <div class="sec-body">
         <div class="btn-row">
@@ -1165,6 +1209,14 @@ kbd {
 </button>
 <div id="sel-count"></div>
 
+<!-- Touch "Enter" for a Kompass tap sequence — locks the radius, or
+     finalizes the sweep, whichever the current phase calls for. Shown by
+     updateKompassCommitFab(). -->
+<button id="kompass-commit-fab" onclick="kompassAdvance()" aria-label="Commit">
+  <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+  COMMIT
+</button>
+
 <!-- Floating CENTER — the touch way back to square. Shown by
      updateCenterFab() only while the view is actually off. -->
 <button id="center-fab" onclick="centerView()" aria-label="Centre and straighten the view">
@@ -1252,12 +1304,12 @@ kbd {
         <div class="kbd-line"><span>Line + Technical</span><kbd>L</kbd></div>
         <div class="kbd-line"><span>Arc + Technical</span><kbd>A</kbd></div>
         <div class="kbd-line"><span>Circle + Technical</span><kbd>C</kbd></div>
-        <div class="kbd-line"><span>Circle + Kompass</span><kbd>K</kbd></div>
+        <div class="kbd-line"><span>Kompass + Technical</span><kbd>K</kbd></div>
         <div class="kbd-line"><span>Bezier + Ink</span><kbd>P</kbd></div>
       </div>
       <div class="kbd-col">
         <h4>Input only</h4>
-        <div class="kbd-line"><span>Keeps your brush</span><kbd>&#8679; B L A C P</kbd></div>
+        <div class="kbd-line"><span>Keeps your brush</span><kbd>&#8679; B L A C K P</kbd></div>
         <div class="kbd-line" style="color:var(--t3);font-size:10.5px;line-height:1.4;">
           <span>A mark is an input and a brush. Presets set both; shift sets the input alone.</span></div>
         <h4 style="margin-top:12px;">Tools</h4>
@@ -1726,7 +1778,8 @@ function escFabTap() {
   }
   // Whatever is in progress first, then the selection — the same order
   // Escape resolves in on a keyboard.
-  if (isDrawing || arcPts.length || penAnchors.length || pendingPt || dimState) {
+  if (isDrawing || arcPts.length || penAnchors.length || pendingPt || dimState ||
+      kompassPhase !== 'idle') {
     cancelPending(); scheduleDraw(); toast('Cancelled'); return;
   }
   if (clearSelection()) { toast('Selection cleared'); return; }
@@ -1744,6 +1797,16 @@ function centerView() {
   toast(mode === 'kanvas' && s
     ? ('Centred \u00b7 ' + paperLabel(s))
     : 'Centred');
+}
+
+// Shown once there is something an Enter/double-tap/COMMIT would actually
+// finish — the centre is planted and the phase is not idle — matching KAD's
+// own rule for LINE's COMMIT: something open enough to finalize.
+function updateKompassCommitFab() {
+  const el = document.getElementById('kompass-commit-fab');
+  if (!el) return;
+  const ready = tool === 'draw' && input === 'kompass' && kompassPhase !== 'idle';
+  el.classList.toggle('show', ready);
 }
 
 // Show the button only when it would do something. The drift check is only
@@ -2355,8 +2418,7 @@ function paintBrushSample(cv, key) {
       case 'layered':  paintLayered (g, S, o, B2, op); break;
       case 'chisel':   paintChisel  (g, S, o, B2, op); break;
       case 'spray':    paintSpray   (g, S, o, B2, op, false); break;
-      case 'compass':  paintCompass (g, S, o, B2, op, false); break;
-    }
+      }
   } catch (err) {}
   g.restore();
 }
@@ -2578,7 +2640,7 @@ const CROSSHAIR_TOOLS = new Set(['rect','ellipse','polygon',
                                  'dim-linear','dim-radial','select']);
 // Hairlines belong to precision INPUTS as well as precision tools — placing an
 // arc centre wants them, dragging ink does not.
-const CROSSHAIR_INPUTS = new Set(['line','arc','circle','bezier']);
+const CROSSHAIR_INPUTS = new Set(['line','arc','circle','kompass','bezier']);
 function wantsCrosshair() {
   if (tool === 'draw') return CROSSHAIR_INPUTS.has(input);
   return CROSSHAIR_TOOLS.has(tool);
@@ -2605,8 +2667,19 @@ function gridIsOn() {
   return !!(s && s.gridOn && s.gridSize > 0);
 }
 function updateGridUI() {
+  const on = gridIsOn();
   const btn = document.getElementById('btn-grid');
-  if (btn) btn.classList.toggle('on', gridIsOn());
+  if (btn) btn.classList.toggle('on', on);
+  // The labelled panel button doubles as its own readout: off says so
+  // plainly, on names the exact size rather than just glowing.
+  const panelBtn = document.getElementById('grid-toggle-btn');
+  if (panelBtn) {
+    panelBtn.classList.toggle('act', on);
+    const s = activeSheet();
+    panelBtn.textContent = (on && mode === 'kanvas' && s)
+      ? ('Grid on \u00b7 ' + gridSizeLabel(s))
+      : (on ? 'Grid on' : 'Grid off');
+  }
 }
 
 function toggleGrid() {
@@ -2748,7 +2821,63 @@ let arcPendingMid = false;
 let penAnchors = [];
 let panOX=0, panOY=0, camSnap={x:0,y:0};
 let mw = {x:0,y:0};
+// Kompass is a tap sequence, not a drag — the same shape as the 3-point Arc
+// tool (arcPts.push on every click, mw drives the live preview between
+// clicks), because that is what "like LINE in KAD" actually means: LINE
+// places a point on click, rubber-bands to the cursor with no button held,
+// and places the next point on the next click. kompassCenter is shared with
+// Circle's own centre-drag (both are "a point, then a radius" gestures).
 let kompassCenter = null;
+let kompassPhase = 'idle';     // 'idle' | 'radius' | 'sweep'
+let kompassRadius = 0;
+let kompassA0 = 0;
+let kompassSweep = 0;
+let kompassPrevAngle = 0;
+// Manual double-tap detection for touch: mobile dblclick synthesis is
+// unreliable, especially with touch-action:none, which this canvas sets to
+// suppress the browser's own gestures. Two taps close in time AND close in
+// position count as one double-tap.
+let kompassLastTapAt = -Infinity;
+let kompassLastTapX = 0, kompassLastTapY = 0;
+const KOMPASS_DBLTAP_MS = 320;
+const KOMPASS_DBLTAP_PX = 24;
+function resetKompassState() {
+  kompassCenter = null; kompassPhase = 'idle';
+  kompassRadius = 0; kompassA0 = 0; kompassSweep = 0; kompassPrevAngle = 0;
+  kompassLastTapAt = -Infinity;
+}
+// Shared by onMove's unconditional hover-tracking and by a single tap in the
+// sweep phase, which behaves exactly like a hover: it updates the live
+// preview at that position without locking anything. Incremental, like the
+// view-tilt gesture, so it survives crossing the +/-PI seam and can carry a
+// sweep past half a turn.
+function kompassTrackSweep(w) {
+  const curAngle = Math.atan2(w.y - kompassCenter.y, w.x - kompassCenter.x);
+  let d = curAngle - kompassPrevAngle;
+  d = ((d + Math.PI) % (Math.PI*2) + Math.PI*2) % (Math.PI*2) - Math.PI;
+  kompassSweep = Math.max(-Math.PI*2, Math.min(Math.PI*2, kompassSweep + d));
+  kompassPrevAngle = curAngle;
+}
+// The one action a double-tap, Enter, or the COMMIT button all perform:
+// whatever the current phase's "lock this and move on" step is. Reading mw —
+// the last tracked position — rather than the tap/press coordinates
+// themselves, so all three trigger the exact same result from the exact same
+// live-previewed state.
+function kompassAdvance() {
+  if (kompassPhase === 'radius') {
+    const r = Math.hypot(mw.x-kompassCenter.x, mw.y-kompassCenter.y);
+    if (r < 0.01) { toast('Move away from the centre first'); return; }
+    kompassRadius = r;
+    kompassA0 = Math.atan2(mw.y-kompassCenter.y, mw.x-kompassCenter.x);
+    kompassPrevAngle = kompassA0;
+    kompassSweep = 0;
+    kompassPhase = 'sweep';
+    scheduleDraw();
+    toast('Radius R' + r.toFixed(1) + ' \u00b7 now swing the arc');
+  } else if (kompassPhase === 'sweep') {
+    commitKompassArc();
+  }
+}
 let dimState = null;
 let textAt = null;
 
@@ -2758,6 +2887,7 @@ const INPUTS = {
   line:     { label:'Line',     hint:'two points',  key:'l' },
   arc:      { label:'Arc',      hint:'three points',key:'a' },
   circle:   { label:'Circle',   hint:'centre + radius', key:'c' },
+  kompass:  { label:'Kompass',  hint:'pivot, then swing', key:'k' },
   bezier:   { label:'Bezier',   hint:'place points',key:'p' },
 };
 
@@ -2783,11 +2913,9 @@ const BRUSHES = {
   airbrush:   { label:'Airbrush',   fam:'spray',    width:2.2, alpha:0.05, spread:1.5,
                 hint:'Soft spray \u00b7 density builds with dwell',
                 warn:'exports as embedded raster, not vector' },
-  kompass:    { label:'Kompass',    fam:'compass',  width:0.9, alpha:0.90,
-                hint:'Drafting compass \u00b7 wobble and grain' },
 };
 const BRUSH_ORDER = ['technical','ink','calligraphy','pencil','charcoal',
-                     'shade','marker','airbrush','kompass'];
+                     'shade','marker','airbrush'];
 
 let input = 'freehand';
 let brush = 'ink';
@@ -2871,7 +2999,12 @@ function cancelPending() {
   arcPendingMid = false; pendingPt = null; cancelHold();
   selBox.pending = false; selBox.active = false;
   if (rotateDrag) { rotateDrag = null; popIfUnused(); }
-  dimState = null; kompassCenter = null;
+  dimState = null;
+  // No checkpoint bookkeeping needed here: like commitArc(), Kompass only
+  // snap()s once it is actually about to add something, at the end of
+  // commitKompassArc(). Cancelling mid-sequence never took a checkpoint in
+  // the first place, so there is nothing to pop back off.
+  resetKompassState();
   isDrawing = false; rawPts = []; livePts = []; liveErase = [];
   hideTextInput();
 }
@@ -2990,7 +3123,7 @@ function abortDrawing() {
   if (!isDrawing) return;
   isDrawing = false;
   rawPts = []; livePts = []; liveErase = [];
-  anchorA = anchorB = null; kompassCenter = null;
+  anchorA = anchorB = null; resetKompassState();
   if (HIST && HIST.u.length) MEM.objects = JSON.parse(HIST.u.pop());
   scheduleDraw();
 }
@@ -3066,6 +3199,41 @@ function onDown(e) {
         snap(); isDrawing = true; anchorA = sp; anchorB = sp;
       } else if (input === 'circle') {
         snap(); isDrawing = true; kompassCenter = sp; anchorA = sp; anchorB = sp;
+      } else if (input === 'kompass') {
+        // Tap sequence, not a drag. A mouse or pen click is deliberate and
+        // precise — it commits immediately, the same way KAD's LINE places a
+        // point on a single click. Touch is different: a finger tap is easy
+        // to land by accident mid-adjustment, so a single tap there only
+        // moves the live preview, and locking needs a double-tap, Enter, or
+        // the COMMIT button. All roads funnel through kompassAdvance(), so
+        // every one of them locks the exact same thing.
+        if (kompassPhase === 'idle') {
+          kompassCenter = sp;
+          kompassPhase = 'radius';
+          mw = w;   // preview shows immediately, before any move at all
+        } else if (e.pointerType === 'touch') {
+          const now = performance.now();
+          const dt = now - kompassLastTapAt;
+          const dPx = Math.hypot(e.clientX-kompassLastTapX, e.clientY-kompassLastTapY);
+          kompassLastTapAt = now; kompassLastTapX = e.clientX; kompassLastTapY = e.clientY;
+          if (dt < KOMPASS_DBLTAP_MS && dPx < KOMPASS_DBLTAP_PX) {
+            kompassLastTapAt = -Infinity;   // consumed — a third quick tap is a new pair, not a triple
+            mw = w;
+            if (kompassPhase === 'sweep') kompassTrackSweep(w);
+            kompassAdvance();
+          } else if (kompassPhase === 'sweep') {
+            kompassTrackSweep(w);
+            scheduleDraw();
+          } else {
+            mw = w;   // radius phase: just move the rubber-band there
+            scheduleDraw();
+          }
+        } else {
+          // Mouse or pen: this click IS the commit.
+          mw = w;
+          if (kompassPhase === 'sweep') kompassTrackSweep(w);
+          kompassAdvance();
+        }
       } else if (input === 'arc') {
         if (arcPendingMid) { arcPts[1] = sp; arcPendingMid = false; commitArc(); break; }
         arcPts.push(sp);
@@ -3110,6 +3278,15 @@ function onMove(e) {
   const s = spt(e);
   const w = S2W(s.x, s.y);
   mw = w;
+  // Kompass's sweep tracks the ANGLE continuously, on every move regardless
+  // of whether a button or a finger is down — the same way Arc's rubber-band
+  // reads mw with no isDrawing gate. This is what makes it work like LINE:
+  // free mouse movement between taps on desktop, a held drag between taps on
+  // touch (which has no hover to read).
+  if (tool === 'draw' && input === 'kompass' && kompassPhase === 'sweep') {
+    kompassTrackSweep(w);
+    scheduleDraw();
+  }
   // Travelled past slop: this is a drag, not a hold, and not a tap.
   if (holdTimer && Math.hypot(e.clientX - holdX, e.clientY - holdY) > HOLD_SLOP) cancelHold();
   if (isDrawing && !strokeMoved && rawPts.length) {
@@ -3242,6 +3419,8 @@ function onUp(e) {
 
   switch (tool) {
     case 'draw':
+      // Kompass is not here: it is a tap sequence (see onDown), never a
+      // drag, so it never reaches a release to commit on.
       if (input === 'freehand')    commitStroke();
       else if (input === 'line')   commitLine();
       else if (input === 'circle') commitCircle();
@@ -3251,13 +3430,18 @@ function onUp(e) {
     case 'ellipse': commitEllipse(); break;
     case 'polygon': commitPolygon(); break;
   }
-  anchorA = anchorB = null; kompassCenter = null;
+  anchorA = anchorB = null;
   rawPts = []; livePts = []; liveErase = [];
   commitCam();
   updateProps(); scheduleDraw();
 }
 
 function onDbl(e) {
+  // Kompass does not need this: a mouse click already commits on its own
+  // (see onDown), so a native dblclick is just two of those firing in a row.
+  // Leaving a handler here too risked double-firing kompassAdvance() for a
+  // single gesture on browsers that also synthesize dblclick from a fast
+  // touch double-tap.
   if (tool === 'draw' && input === 'bezier' && penAnchors.length >= 2) commitPen();
   else if (tool === 'polygon' || (tool === 'draw' && input === 'arc')) {
     cancelPending(); scheduleDraw();
@@ -3631,6 +3815,44 @@ function commitCircle() {
   addObject(Object.assign({ type:'arc', cx:anchorA.x, cy:anchorA.y, r,
                             a0:0, a1:Math.PI*2, ccw:true, full:true }, drawStyle()));
 }
+// The genuine arc: a fixed centre and radius, swept by hand rather than
+// derived from three points on the curve. A sweep that reaches a full turn
+// commits as a circle instead — that is what swinging a compass all the way
+// around actually draws, and it is the same object commitCircle produces.
+// Fires from the third tap OR the COMMIT button — both just mean "use
+// whatever sweep is currently being previewed", the same "commit the chain
+// as it stands" idea as KAD's COMMIT for LINE.
+function commitKompassArc() {
+  const ok = kompassPhase === 'sweep' && kompassCenter && kompassRadius >= 0.01;
+  if (!ok) { resetKompassState(); scheduleDraw(); return; }
+  snap();      // taken here, once, only when something is actually about to
+               // change — the same point commitArc() and commitPen() snap().
+  const full = Math.abs(kompassSweep) >= Math.PI*2 - 1e-4;
+  if (full) {
+    addObject(Object.assign({ type:'arc', cx:kompassCenter.x, cy:kompassCenter.y,
+                              r:kompassRadius, a0:0, a1:Math.PI*2, ccw:true, full:true },
+                            drawStyle()));
+    toast('Circle R' + kompassRadius.toFixed(1) + ' \u00b7 full turn');
+  } else {
+    const ccw = kompassSweep >= 0;
+    addObject(Object.assign({ type:'arc', cx:kompassCenter.x, cy:kompassCenter.y,
+                              r:kompassRadius, a0:kompassA0, a1:kompassA0+kompassSweep, ccw },
+                            drawStyle()));
+    toast('Arc R' + kompassRadius.toFixed(1) + ' \u00b7 ' +
+          Math.round(Math.abs(kompassSweep)*180/Math.PI) + '\u00b0');
+  }
+  // Self-contained on purpose: this is called from four different places
+  // (a mouse click in onDown, a double-tap in onDown, the Enter key, and the
+  // COMMIT button) and only one of those — onDown — already ends in its own
+  // scheduleDraw(). The other three do not, which is exactly why the rig and
+  // the rubber-band used to linger on screen after Enter or COMMIT: the arc
+  // committed correctly, the canvas just was not told to repaint. Handling
+  // the redraw here means every caller gets it for free.
+  resetKompassState();
+  rebuildEraseCanvas();
+  updateProps();
+  scheduleDraw();
+}
 function commitPolygon() {
   if (!anchorA || !anchorB) return;
   const r = Math.hypot(anchorB.x-anchorA.x, anchorB.y-anchorA.y);
@@ -3660,10 +3882,10 @@ function commitArc() {
                             a0:a.a0, a1:a.a1, ccw:a.ccw, closed:SH.closed }, drawStyle()));
   toast('Arc R' + a.r.toFixed(1));
 }
-// KOMPASS is no longer a separate commit: it is the Circle input with the
-// Kompass brush loaded, and commitCircle already produces exactly that. The
-// compass rig still shows while the radius is being set, because seeing the
-// pivot and the legs is better feedback than a number.
+// The compass RIG (pivot + legs, further down) is not the Kompass brush —
+// that brush is gone. The rig is generic feedback for the Circle input,
+// shown for whatever brush is loaded while a radius is being set, and it is
+// kept for exactly that reason: seeing the radius is better than a number.
 function commitPen() {
   if (penAnchors.length < 2) { penAnchors = []; return; }
   snap();
@@ -3919,7 +4141,6 @@ function pickFromCanvas(s) {
 // freehand drag or a three-point arc.
 function centerlineOf(o) {
   const w0 = (o.size != null ? o.size : o.width) || 1;
-  const seg = () => Math.max(8, Math.min(320, Math.round((o.r || 40) * cam.zoom / 3)));
   switch (o.type) {
     case 'stroke': {
       const raw = (o.pts || []).map(p => ({ x:p.x, y:p.y, w:(p.w != null ? p.w : w0) }));
@@ -3939,7 +4160,14 @@ function centerlineOf(o) {
       return out;
     }
     case 'arc': {
-      const n = seg();
+      // Segments scaled to the ACTUAL on-screen arc length (radius x angle x
+      // zoom), not just radius. The old formula sized every arc as if it
+      // swept a full circle, so a small-radius, wide-sweep arc — exactly
+      // what Kompass produces — got far too few segments per degree and
+      // rendered as a visible polygon instead of a curve.
+      const sweepRad = o.full ? Math.PI*2 : arcSweep(o);
+      const arcLenPx = o.r * cam.zoom * sweepRad;
+      const n = Math.max(8, Math.min(480, Math.round(arcLenPx / 4)));
       const out = [];
       if (o.full || arcSweep(o) >= Math.PI*2 - 1e-6) {
         for (let i = 0; i <= n; i++) {
@@ -4021,7 +4249,6 @@ function paintBrush(tctx, o, isLive) {
     case 'layered':  paintLayered (tctx, S, o, B2, op); break;
     case 'chisel':   paintChisel  (tctx, S, o, B2, op); break;
     case 'spray':    paintSpray   (tctx, S, o, B2, op, isLive); break;
-    case 'compass':  paintCompass (tctx, S, o, B2, op, isLive); break;
     default:         paintOutline (tctx, S, o, B2, op);
   }
   tctx.restore();
@@ -4156,54 +4383,6 @@ function paintSpray(tctx, S, o, B2, op, isLive) {
   }
 }
 
-// The compass. Kept as its own brush because the wobble runs ALONG the sweep —
-// it is a property of turning a radius, not of dragging a nib, and it is the
-// one texture here that reads as drafting rather than as art.
-function paintCompass(tctx, S, o, B2, op, isLive) {
-  if (S.length < 2) { dot(tctx, S[0], op); return; }
-  const rnd = seeded(o.seed || o.id || 1);
-  const w = Math.max(S[0].w, 0.6);
-  tctx.globalAlpha = op * B2.alpha;
-  tctx.lineWidth = w;
-  // Radial wobble about the centre when there is one; otherwise a normal
-  // wobble, so the brush still behaves on a freehand drag.
-  const hasC = (o.cx != null && o.cy != null);
-  const cS = hasC ? W2S(o.cx, o.cy) : null;
-  tctx.beginPath();
-  for (let i = 0; i < S.length; i++) {
-    let px = S[i].x, py = S[i].y;
-    if (!isLive) {
-      const j = (rnd()-0.5) * w * 0.7;
-      if (hasC) {
-        const dx = px-cS.x, dy = py-cS.y, d = Math.hypot(dx,dy) || 1;
-        px += dx/d*j; py += dy/d*j;
-      } else {
-        const a = S[Math.max(0,i-1)], b = S[Math.min(S.length-1,i+1)];
-        let tx = b.x-a.x, ty = b.y-a.y;
-        const tl = Math.hypot(tx,ty) || 1;
-        px += -ty/tl*j; py += tx/tl*j;
-      }
-    }
-    i === 0 ? tctx.moveTo(px,py) : tctx.lineTo(px,py);
-  }
-  if (o.closed || o.full) tctx.closePath();
-  tctx.stroke();
-  if (isLive) return;
-  const grain = Math.min(Math.round(S.length * 6), 2600);
-  for (let g = 0; g < grain; g++) {
-    const i = Math.floor(rnd() * S.length);
-    const p = S[i];
-    let ox = 0, oy = 0;
-    const j = (rnd()-0.5) * w * 3.5;
-    if (hasC) {
-      const dx = p.x-cS.x, dy = p.y-cS.y, d = Math.hypot(dx,dy) || 1;
-      ox = dx/d*j; oy = dy/d*j;
-    } else { ox = (rnd()-0.5)*w*2; oy = (rnd()-0.5)*w*2; }
-    tctx.globalAlpha = op * rnd() * 0.18;
-    tctx.fillRect(p.x + ox, p.y + oy, 0.65, 0.65);
-  }
-}
-
 function dot(tctx, p, op) {
   if (!p) return;
   tctx.globalAlpha = op;
@@ -4291,6 +4470,7 @@ function render() {
   commitCam();
   updateCenterFab();
   updateSelFabs();
+  updateKompassCommitFab();
 }
 
 // Committed art. Drawn straight into the frame whenever it can be, because
@@ -4633,9 +4813,8 @@ function drawArc(tctx, o, isLive) {
   if (o.stroke !== false) tctx.stroke();
   tctx.restore();
 }
-// The compass texture now lives in the Kompass BRUSH (see paintCompass), so
-// an arc has exactly one render path and the look is chosen the same way every
-// other look is chosen.
+// An arc has exactly one render path; its look is chosen the same way every
+// other look is chosen, through the brush on the object.
 
 /* ── Other primitives ────────────────────────────────────────────────────── */
 function drawPath(tctx, o, isLive) {
@@ -4844,6 +5023,34 @@ function drawLive() {
       drawKompassRig(anchorA, anchorB, r);
     }
   }
+
+  // Kompass — a tap sequence, so its preview is NOT gated by isDrawing at
+  // all, the same as Arc's below: it has to keep showing between taps, while
+  // no button or finger is down.
+  if (tool === 'draw' && input === 'kompass' && kompassCenter) {
+    const ds = Object.assign(st(), { brush, seed:1 });
+    if (kompassPhase === 'radius') {
+      // Amber dotted line, Centerpoint dot to the cursor, stretching live —
+      // the direct equivalent of KAD's LINE rubber-band, and broadcast past
+      // the cursor for the same reason the sweep rays are: a short segment
+      // is hard to aim precisely by eye or thumb.
+      drawKompassRadiusRubberBand(kompassCenter, snapPt(mw.x, mw.y));
+    } else if (kompassPhase === 'sweep') {
+      const full = Math.abs(kompassSweep) >= Math.PI*2 - 1e-4;
+      const arcObj = full
+        ? { type:'arc', cx:kompassCenter.x, cy:kompassCenter.y, r:kompassRadius,
+            a0:0, a1:Math.PI*2, ccw:true, full:true }
+        : { type:'arc', cx:kompassCenter.x, cy:kompassCenter.y, r:kompassRadius,
+            a0:kompassA0, a1:kompassA0+kompassSweep, ccw:kompassSweep>=0 };
+      // Bright construction arc first, so the true geometry is unmistakable
+      // no matter how transparent the loaded brush is; the WYSIWYG brush
+      // preview goes on top of it.
+      drawKompassArcGuide(arcObj);
+      paintBrush(ctx, Object.assign(arcObj, ds), true);
+      drawKompassSweepRig(kompassCenter, kompassRadius, kompassA0,
+                          kompassA0+kompassSweep, kompassSweep, full);
+    }
+  }
   if (isDrawing && anchorA && anchorB && tool !== 'draw') {
     switch (tool) {
       case 'rect': {
@@ -4983,6 +5190,121 @@ function radiusHintC(a) {
 }
 // The compass rig: pivot, needle leg, pencil leg. It exists so the radius is
 // legible while you set it, the way looking at a real compass tells you.
+// Pivot only — shown from press until the drag has moved far enough to lock a
+// span, so there is always SOMETHING on screen the instant you plant the
+// point rather than nothing until the first real movement.
+// A crisp, brush-independent outline of the arc actually being swept.
+// Drawn straight from the geometry rather than through paintBrush, so it
+// never depends on how transparent the loaded brush happens to be.
+function drawKompassArcGuide(o) {
+  const c = W2S(o.cx, o.cy);
+  const r = o.r * cam.zoom;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,212,255,0.85)';
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash(o.full ? [] : [5,4]);
+  ctx.beginPath();
+  if (o.full) ctx.arc(c.x, c.y, r, 0, Math.PI*2);
+  else ctx.arc(c.x, c.y, r, cam.rot - o.a0, cam.rot - o.a1, o.ccw);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+// Phase 'radius': a Centerpoint dot at the tap, and an amber DOTTED line that
+// stretches and slides to the cursor — LINE's rubber-band, radially. Broadcast
+// past the cursor to the edge of the view for the same reason the sweep rays
+// do: a short segment is hard to aim precisely by eye or thumb.
+function drawKompassRadiusRubberBand(center, cur) {
+  const c = W2S(center.x, center.y);
+  const p = W2S(cur.x, cur.y);
+  const r = Math.hypot(cur.x-center.x, cur.y-center.y);
+  const OA = 'rgba(180,118,32,';
+  ctx.save();
+
+  // Centerpoint dot, placed at the first tap.
+  ctx.fillStyle = OA+'0.95)';
+  ctx.beginPath(); ctx.arc(c.x,c.y,3.4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = OA+'0.9)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(c.x,c.y,5.5,0,Math.PI*2); ctx.stroke();
+
+  if (r > 1e-6) {
+    // The broadcast ray, dim, reaching past the cursor to the view edge —
+    // drawn first so the bright rubber-band segment sits on top of it.
+    const reach = (CW() + CH()) / Math.max(cam.zoom, 1e-4);
+    const ang = Math.atan2(cur.y-center.y, cur.x-center.x);
+    const far = W2S(center.x + Math.cos(ang)*reach, center.y + Math.sin(ang)*reach);
+    ctx.strokeStyle = OA+'0.22)'; ctx.lineWidth = 1; ctx.setLineDash([2,6]);
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(far.x,far.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // The stretch/slide rubber-band itself — dotted amber, centre to cursor.
+    ctx.strokeStyle = OA+'0.9)'; ctx.lineWidth = 1.7;
+    ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = OA+'0.95)';
+    ctx.beginPath(); ctx.arc(p.x,p.y,2.8,0,Math.PI*2); ctx.fill();
+    ctx.font = '11px "Fira Code", monospace';
+    ctx.fillText('R' + r.toFixed(1), p.x+9, p.y-7);
+  }
+  ctx.restore();
+}
+// Locked and sweeping: pivot, the physical legs at the true radius, and a
+// RAY through each leg broadcasting well past its tip to the edge of the
+// view — the same reason KAD's rubber-band line for LINE persists and reads
+// clearly regardless of how short the segment actually is. A short leg on a
+// small-radius sweep is hard to aim by eye; a long beam through it is not.
+// Both leg tips and both ray endpoints are computed through W2S from
+// world-space angles, so this reads correctly at any view tilt for free.
+function drawKompassSweepRig(center, r, a0, a1, sweep, full) {
+  const c = W2S(center.x, center.y);
+  const startS = W2S(center.x + Math.cos(a0)*r, center.y + Math.sin(a0)*r);
+  const endS   = W2S(center.x + Math.cos(a1)*r, center.y + Math.sin(a1)*r);
+  const OA = 'rgba(180,118,32,';
+  // Far enough past the viewport at any zoom that the ray always reads as
+  // reaching the edge rather than stopping short.
+  const reach = (CW() + CH()) / Math.max(cam.zoom, 1e-4);
+  const rayS = ang => W2S(center.x + Math.cos(ang)*reach, center.y + Math.sin(ang)*reach);
+
+  ctx.save();
+  ctx.strokeStyle = OA+'0.9)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(c.x,c.y,4.5,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(c.x-9,c.y); ctx.lineTo(c.x+9,c.y);
+  ctx.moveTo(c.x,c.y-9); ctx.lineTo(c.x,c.y+9);
+  ctx.stroke();
+
+  if (!full) {
+    // Start ray — dim, broadcasting where the span first touched down.
+    const sr = rayS(a0);
+    ctx.strokeStyle = OA+'0.22)'; ctx.lineWidth = 1; ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(sr.x,sr.y); ctx.stroke();
+    ctx.setLineDash([]);
+    // The physical start leg over the true span.
+    ctx.strokeStyle = OA+'0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(startS.x,startS.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Active ray — bright, this is the aim beam.
+    const er = rayS(a1);
+    ctx.strokeStyle = OA+'0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(er.x,er.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // The physical active leg over the true radius, on top of its own ray.
+  ctx.strokeStyle = OA+'0.9)'; ctx.lineWidth = 1.7;
+  ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(endS.x,endS.y); ctx.stroke();
+  ctx.fillStyle = OA+'0.95)';
+  ctx.beginPath(); ctx.arc(endS.x,endS.y,2.8,0,Math.PI*2); ctx.fill();
+
+  ctx.font = '11px "Fira Code", monospace';
+  const deg = full ? 360 : Math.round(Math.abs(sweep)*180/Math.PI);
+  ctx.fillText('R' + r.toFixed(1) + '  ' + deg + '\u00b0', endS.x + 9, endS.y - 7);
+  ctx.restore();
+}
+
 function drawKompassRig(center, at, r) {
   const c = W2S(center.x, center.y), p = W2S(at.x, at.y);
   const OA = 'rgba(180,118,32,';
@@ -5366,7 +5688,9 @@ function normaliseMem(src) {
     // implied, and the compass flag its brush.
     for (const o of m.objects) {
       if (o.brush) continue;
-      if (o.kompass) { o.brush = 'kompass'; delete o.kompass; }
+      // 'kompass' is gone; fold any legacy-flagged arc into Technical rather
+      // than a brush name that no longer resolves to anything.
+      if (o.kompass) { o.brush = 'technical'; delete o.kompass; }
       else if (o.type === 'stroke') o.brush = LEGACY_MODE_TO_BRUSH[o.mode] || 'ink';
       else if (o.type === 'line' || o.type === 'arc' || o.type === 'path') o.brush = 'technical';
     }
@@ -5998,10 +6322,10 @@ const DRAW_PRESETS = {
   l: ['line','technical'],
   a: ['arc','technical'],
   c: ['circle','technical'],
-  k: ['circle','kompass'],
+  k: ['kompass','technical'],
   p: ['bezier','ink'],
 };
-const INPUT_KEYS = { b:'freehand', l:'line', a:'arc', c:'circle', p:'bezier' };
+const INPUT_KEYS = { b:'freehand', l:'line', a:'arc', c:'circle', k:'kompass', p:'bezier' };
 
 document.addEventListener('keydown', e => {
   const el = document.activeElement;
@@ -6027,6 +6351,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape')  { cancelPending(); selectedIds.clear();
                              closePaperPicker(); document.getElementById('kbd-modal').classList.remove('on');
                              updateProps(); scheduleDraw(); return; }
+  // Plain Enter — the keyboard equivalent of double-tap / COMMIT: locks the
+  // radius or finalizes the sweep, whichever the current phase calls for.
+  if (e.key === 'Enter' && tool === 'draw' && input === 'kompass' && kompassPhase !== 'idle') {
+    e.preventDefault(); kompassAdvance(); return;
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); return; }
   if (e.key === 'Tab')     { e.preventDefault(); setMode(mode === 'kanvas' ? 'kreate' : 'kanvas'); return; }
   if (e.key === '?')       { toggleKbd(); return; }
