@@ -774,6 +774,96 @@ kbd {
   background:var(--t4); border:1px solid var(--border); color:var(--t1);
 }
 
+/* ═══════════════════════════════ MENU BAR ═════════════════════════════════
+   Named menus, because an icon can only ever remind you of something you
+   already knew. Every destructive or file-level action in this program used
+   to be a glyph you had to decode — a floppy disk for .kvs, two near-identical
+   sheets of paper for import and export PDF.
+
+   The design is KANVAS's, not a port: glass and blur rather than KAD's flat
+   panel, 10px radii to match the modals, and a header that takes the mode
+   accent when open — so the bar turns teal in KANVAS and violet in KREATE
+   along with the rest of the chrome.
+   ─────────────────────────────────────────────────────────────────────────── */
+.mbar { display:flex; align-items:stretch; flex-shrink:0; height:100%; }
+.mbar-item {
+  position:relative; display:flex; align-items:center;
+  padding:0 11px; height:100%; cursor:pointer; user-select:none;
+  font-family:var(--fd); font-size:12.5px; font-weight:600;
+  letter-spacing:0.01em; color:var(--t2); white-space:nowrap;
+  transition:color .14s, background .14s;
+}
+.mbar-item:hover { color:var(--t1); background:var(--hover); }
+/* The open header keeps the accent underline so you can see which column the
+   floating panel belongs to — it is position:fixed and therefore visually
+   detached from the bar. */
+.mbar-item.on { color:var(--a1); background:var(--a1g); }
+.mbar-item.on::after {
+  content:''; position:absolute; left:6px; right:6px; bottom:0; height:2px;
+  background:var(--a1); border-radius:2px 2px 0 0;
+}
+
+/* Fixed, always — not just on touch. #topbar scrolls sideways and clips its
+   overflow on BOTH axes, so an absolutely-positioned child would be cut off
+   on a desktop just as readily as on a phone. Placing every dropdown from JS
+   means one code path instead of a breakpoint-dependent pair. */
+.mdrop {
+  position:fixed; display:none; flex-direction:column; z-index:400;
+  min-width:232px; max-width:min(300px, calc(100vw - 12px));
+  max-height:calc(100vh - var(--th) - 16px); overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:var(--glass2);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid var(--border-hi); border-radius:10px;
+  box-shadow:0 18px 48px rgba(0,0,0,0.62), 0 0 0 1px rgba(0,0,0,0.4);
+  padding:5px; scrollbar-width:none;
+}
+.mdrop::-webkit-scrollbar { width:0; }
+.mdrop.on { display:flex; }
+
+/* Three columns, so a check never shifts a label and a shortcut never
+   collides with one. */
+.mrow {
+  display:grid; grid-template-columns:15px 1fr auto; align-items:center;
+  gap:9px; height:32px; padding:0 9px; border-radius:6px;
+  font-family:var(--fd); font-size:12.5px; color:var(--t2);
+  cursor:pointer; white-space:nowrap;
+  transition:background .1s, color .1s;
+}
+.mrow:hover { background:var(--hover); color:var(--t1); }
+.mrow .mc { font-size:11px; color:var(--a1); opacity:0; text-align:center; }
+.mrow.on .mc { opacity:1; }
+.mrow.on { color:var(--t1); }
+.mrow .mk {
+  font-family:var(--fm); font-size:9.5px; color:var(--t3);
+  letter-spacing:0.02em; padding-left:14px;
+}
+.mrow:hover .mk { color:var(--t2); }
+/* Unavailable rather than absent. A Sheet menu that empties itself in KREATE
+   teaches nothing; one that greys out shows what the other space would give
+   you. Ditto Delete Sheet on the last sheet. */
+.mrow.off { opacity:0.3; pointer-events:none; }
+.mrow.danger:hover { background:rgba(255,68,102,0.13); color:var(--red); }
+
+.msep { height:1px; background:var(--border); margin:5px 7px; }
+.mlabel {
+  font-family:var(--fm); font-size:8.5px; letter-spacing:0.2em;
+  text-transform:uppercase; color:var(--t3);
+  padding:8px 9px 4px;
+}
+
+/* Touch gets 44px rows. The pointer here is a fingertip or a stylus nib, not
+   a 1px cursor, and a 32px row is a coin-toss between two entries. */
+@media (max-width:900px) {
+  .mbar-item { padding:0 9px; font-size:12px; }
+  .mrow { height:44px; font-size:13.5px; }
+  .mdrop { min-width:248px; padding:6px; }
+}
+@media (pointer:coarse) {
+  .mrow { height:44px; }
+}
+
 /* ── PDF dialogs ──────────────────────────────────────────────────────────
    The import dialog asks the one question a PDF cannot answer for itself:
    what should happen to the text. Each option is a card rather than a radio
@@ -932,29 +1022,123 @@ kbd {
 
     <div class="tb-sep"></div>
 
-    <button class="tb-btn" onclick="newDocument()" title="New document">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span class="lbl">New</span>
-    </button>
-    <button class="tb-btn" onclick="openKVS()" title="Open .kvs">
-      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      <span class="lbl">Open</span>
-    </button>
-    <button class="tb-btn" onclick="saveKVS()" title="Save .kvs (Ctrl+S)">
-      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-      <span class="lbl">Save</span>
-    </button>
-    <button class="tb-btn" onclick="openPDF()" title="Import a PDF as editable vectors">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><polyline points="9 15 12 18 15 15"/></svg>
-      <span class="lbl">PDF</span>
-    </button>
-    <!-- Open takes either format and routes on the extension, so there is no
-         wrong button to press. The second input exists only so the dedicated
-         PDF control offers a PDF-only file list, which matters on a tablet. -->
-    <input type="file" id="kvs-file" accept=".kvs,.vad,.pdf,application/json,application/pdf" style="display:none" onchange="onKVSFile(event)">
-    <input type="file" id="pdf-file" accept=".pdf,application/pdf" style="display:none" onchange="onPDFFile(event)">
+    <!-- Four menus. Draw is deliberately absent: every tool, input and brush
+         already carries a text label in the left sidebar, and ? lists all of
+         the shortcuts at once, so a Draw menu would be thirty duplicated rows
+         teaching nothing new. -->
+    <div class="mbar" id="mbar">
+      <div class="mbar-item" id="m-file" data-menu="file">File
+        <div class="mdrop" id="dd-file">
+          <div class="mrow" onclick="menuDo(newDocument)">
+            <span class="mc">&#10003;</span><span>New Document</span><span class="mk"></span></div>
+          <div class="mrow" onclick="menuDo(openKVS)">
+            <span class="mc">&#10003;</span><span>Open&#8230;</span><span class="mk">Ctrl O</span></div>
+          <div class="mrow" onclick="menuDo(saveKVS)">
+            <span class="mc">&#10003;</span><span>Save .kvs</span><span class="mk">Ctrl S</span></div>
+          <div class="mlabel">Import</div>
+          <div class="mrow" onclick="menuDo(openPDF)">
+            <span class="mc">&#10003;</span><span>Import PDF&#8230;</span><span class="mk">Ctrl &#8679; O</span></div>
+          <div class="mlabel">Export</div>
+          <div class="mrow" onclick="menuDo(exportSVG)">
+            <span class="mc">&#10003;</span><span>Export SVG&#8230;</span><span class="mk"></span></div>
+          <div class="mrow" onclick="menuDo(exportPNG)">
+            <span class="mc">&#10003;</span><span>Export PNG&#8230;</span><span class="mk"></span></div>
+          <div class="mrow" onclick="menuDo(openPdfExport)">
+            <span class="mc">&#10003;</span><span>Export PDF&#8230;</span><span class="mk">Ctrl P</span></div>
+          <div class="msep"></div>
+          <div class="mrow" onclick="menuDo(printPDF)">
+            <span class="mc">&#10003;</span><span>Print&#8230;</span><span class="mk"></span></div>
+        </div>
+      </div>
+
+      <div class="mbar-item" id="m-edit" data-menu="edit">Edit
+        <div class="mdrop" id="dd-edit">
+          <div class="mrow" id="m-undo" onclick="menuDo(undo)">
+            <span class="mc">&#10003;</span><span>Undo</span><span class="mk">Ctrl Z</span></div>
+          <div class="mrow" id="m-redo" onclick="menuDo(redo)">
+            <span class="mc">&#10003;</span><span>Redo</span><span class="mk">Ctrl &#8679; Z</span></div>
+          <div class="msep"></div>
+          <div class="mrow" onclick="menuDo(selectAll)">
+            <span class="mc">&#10003;</span><span>Select All</span><span class="mk">Ctrl A</span></div>
+          <div class="mrow" id="m-del" onclick="menuDo(deleteSelected)">
+            <span class="mc">&#10003;</span><span>Delete Selected</span><span class="mk">Del</span></div>
+          <div class="msep"></div>
+          <div class="mrow" id="m-rccw" onclick="menuDo(() => nudgeSelectionRotate(-15))">
+            <span class="mc">&#10003;</span><span>Rotate 15&deg; &#8634;</span><span class="mk"></span></div>
+          <div class="mrow" id="m-rcw" onclick="menuDo(() => nudgeSelectionRotate(15))">
+            <span class="mc">&#10003;</span><span>Rotate 15&deg; &#8635;</span><span class="mk"></span></div>
+          <div class="msep"></div>
+          <div class="mrow danger" onclick="menuDo(clearSpace)">
+            <span class="mc">&#10003;</span><span>Clear Space</span><span class="mk"></span></div>
+        </div>
+      </div>
+
+      <div class="mbar-item" id="m-sheet" data-menu="sheet">Sheet
+        <div class="mdrop" id="dd-sheet">
+          <div class="mrow sheet-op" onclick="menuDo(() => openPaperPicker(true))">
+            <span class="mc">&#10003;</span><span>New Sheet&#8230;</span><span class="mk">Ctrl &#8629;</span></div>
+          <div class="mrow sheet-op" onclick="menuDo(duplicateSheet)">
+            <span class="mc">&#10003;</span><span>Duplicate Sheet</span><span class="mk"></span></div>
+          <div class="mrow sheet-op" onclick="menuDo(renameSheet)">
+            <span class="mc">&#10003;</span><span>Rename Sheet&#8230;</span><span class="mk"></span></div>
+          <div class="mrow sheet-op danger" id="m-delsheet" onclick="menuDo(deleteSheet)">
+            <span class="mc">&#10003;</span><span>Delete Sheet</span><span class="mk"></span></div>
+          <div class="msep"></div>
+          <div class="mrow sheet-op" onclick="menuDo(() => nextSheet(1))">
+            <span class="mc">&#10003;</span><span>Next Sheet</span><span class="mk">Ctrl &#8594;</span></div>
+          <div class="mrow sheet-op" onclick="menuDo(() => nextSheet(-1))">
+            <span class="mc">&#10003;</span><span>Previous Sheet</span><span class="mk">Ctrl &#8592;</span></div>
+          <div class="mlabel">Paper</div>
+          <div class="mrow sheet-op" onclick="menuDo(() => openPaperPicker(false))">
+            <span class="mc">&#10003;</span><span>Paper Size&#8230;</span><span class="mk"></span></div>
+          <div class="mrow sheet-op" id="m-port" onclick="menuDo(() => setOrient('p'))">
+            <span class="mc">&#10003;</span><span>Portrait</span><span class="mk"></span></div>
+          <div class="mrow sheet-op" id="m-land" onclick="menuDo(() => setOrient('l'))">
+            <span class="mc">&#10003;</span><span>Landscape</span><span class="mk"></span></div>
+          <div class="mrow sheet-op" onclick="menuDo(() => rotateSheet(true))">
+            <span class="mc">&#10003;</span><span>Turn 90&deg;</span><span class="mk">Ctrl &#8679; R</span></div>
+          <div class="msep"></div>
+          <div class="mrow sheet-op" id="m-bind" onclick="menuDo(toggleBindArt)">
+            <span class="mc">&#10003;</span><span>Art scales with sheet</span><span class="mk"></span></div>
+          <div class="mrow sheet-op" onclick="menuDo(openGridPrompt)">
+            <span class="mc">&#10003;</span><span>Grid Size&#8230;</span><span class="mk"></span></div>
+        </div>
+      </div>
+
+      <div class="mbar-item" id="m-view" data-menu="view">View
+        <div class="mdrop" id="dd-view">
+          <div class="mrow" onclick="menuDo(zoomFit)">
+            <span class="mc">&#10003;</span><span>Fit to Content</span><span class="mk">F</span></div>
+          <div class="mrow" onclick="menuDo(resetViewRot)">
+            <span class="mc">&#10003;</span><span>Straighten View</span><span class="mk">0</span></div>
+          <div class="mrow" onclick="menuDo(centerView)">
+            <span class="mc">&#10003;</span><span>Centre View</span><span class="mk"></span></div>
+          <div class="msep"></div>
+          <div class="mrow" id="m-grid" onclick="menuDo(toggleGrid)">
+            <span class="mc">&#10003;</span><span>Grid</span><span class="mk">G</span></div>
+          <div class="mrow" id="m-snap" onclick="menuDo(toggleSnap)">
+            <span class="mc">&#10003;</span><span>Snap</span><span class="mk">S</span></div>
+          <div class="mrow" id="m-rulers" onclick="menuDo(toggleRulers)">
+            <span class="mc">&#10003;</span><span>Rulers</span><span class="mk">R</span></div>
+          <div class="mlabel">Space</div>
+          <div class="mrow" id="m-kanvas" onclick="menuDo(() => setMode('kanvas'))">
+            <span class="mc">&#10003;</span><span>KANVAS &#183; sheets</span><span class="mk">Tab</span></div>
+          <div class="mrow" id="m-kreate" onclick="menuDo(() => setMode('kreate'))">
+            <span class="mc">&#10003;</span><span>KREATE &#183; infinite</span><span class="mk">Tab</span></div>
+          <div class="msep"></div>
+          <div class="mrow" onclick="menuDo(toggleKbd)">
+            <span class="mc">&#10003;</span><span>Keyboard Shortcuts</span><span class="mk">?</span></div>
+        </div>
+      </div>
+    </div>
 
     <div class="tb-sep"></div>
+
+    <!-- Open takes either format and routes on the extension, so there is no
+         wrong entry in the File menu. The second input exists only so Import
+         PDF offers a PDF-only file list, which matters on a tablet. -->
+    <input type="file" id="kvs-file" accept=".kvs,.vad,.pdf,application/json,application/pdf" style="display:none" onchange="onKVSFile(event)">
+    <input type="file" id="pdf-file" accept=".pdf,application/pdf" style="display:none" onchange="onPDFFile(event)">
 
     <button class="tb-btn icon-only" onclick="undo()" title="Undo (Ctrl+Z)">
       <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
@@ -985,20 +1169,6 @@ kbd {
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16"/></svg>
     </button>
 
-    <div class="tb-sep"></div>
-
-    <button class="tb-btn" onclick="exportSVG()" title="Export SVG">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span class="lbl">SVG</span>
-    </button>
-    <button class="tb-btn" onclick="exportPNG()" title="Export PNG \u2014 preserves every brush">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
-      <span class="lbl">PNG</span>
-    </button>
-    <button class="tb-btn" onclick="openPdfExport()" title="Export vector PDF (Ctrl+P)">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><rect x="2" y="14" width="20" height="8" rx="1"/><path d="M12 2v6"/><polyline points="9 5 12 2 15 5"/></svg>
-      <span class="lbl">PDF</span>
-    </button>
     <button class="tb-btn icon-only" onclick="toggleKbd()" title="Shortcuts (?)">
       <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>
     </button>
@@ -1704,6 +1874,7 @@ Every tool, input and brush is a single bare letter &#8212; no modifier is ever 
         <h4>Document</h4>
         <div class="kbd-line"><span>Undo</span><kbd>Ctrl Z</kbd></div>
         <div class="kbd-line"><span>Redo</span><kbd>Ctrl &#8679; Z</kbd></div>
+        <div class="kbd-line"><span>Select all</span><kbd>Ctrl A</kbd></div>
         <div class="kbd-line"><span>Save .kvs</span><kbd>Ctrl S</kbd></div>
         <div class="kbd-line"><span>Open</span><kbd>Ctrl O</kbd></div>
         <div class="kbd-line"><span>Import PDF</span><kbd>Ctrl &#8679; O</kbd></div>
@@ -7056,6 +7227,138 @@ function printPDF() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   MENU BAR
+
+   Interaction model: CLICK opens, HOVER only switches between menus once one
+   is already open. That is how a desktop menubar has always behaved, and it
+   also sidesteps a nasty touch bug for free — touch browsers fire a phantom
+   `mouseenter` immediately before the first `click`, so a hover-to-open bar
+   opens on the phantom, then the real click sees it already open and closes
+   it again, and the menu needs two taps. Making hover inert until something
+   is open means the phantom lands on a no-op, with no event interception
+   anywhere.
+   ═══════════════════════════════════════════════════════════════════════════ */
+let openMenuName = null;
+
+function openMenu(name) {
+  closeMenus();
+  const item = document.getElementById('m-' + name);
+  const dd   = document.getElementById('dd-' + name);
+  if (!item || !dd) return;
+  syncMenus();
+  item.classList.add('on');
+  dd.classList.add('on');
+  openMenuName = name;
+
+  // Placed here rather than in CSS because .mdrop is position:fixed — see the
+  // note on the class. Anchor under the header, then pull back onto the
+  // screen if the panel would hang off the right edge.
+  const r = item.getBoundingClientRect();
+  dd.style.left = Math.max(6, r.left) + 'px';
+  dd.style.top  = r.bottom + 'px';
+  requestAnimationFrame(() => {
+    if (!dd.classList.contains('on')) return;
+    const d = dd.getBoundingClientRect();
+    const over = d.right - window.innerWidth + 6;
+    if (over > 0) dd.style.left = Math.max(6, r.left - over) + 'px';
+  });
+}
+
+function closeMenus() {
+  if (!openMenuName) return;
+  for (const el of document.querySelectorAll('.mbar-item.on')) el.classList.remove('on');
+  for (const el of document.querySelectorAll('.mdrop.on'))     el.classList.remove('on');
+  openMenuName = null;
+}
+
+// Every row goes through here, so no row can forget to close the menu after
+// itself — which is the single most common rot in a hand-written menubar.
+function menuDo(fn) {
+  closeMenus();
+  try { fn(); } catch (err) { toast('That did not work'); }
+}
+
+/* ── State ────────────────────────────────────────────────────────────────
+   Ticks and greyed-out rows are computed in one place, immediately before the
+   panel is shown. Pushing state INTO the menu from every toggle would mean
+   ten call sites that each have to remember; pulling it once, on open, cannot
+   fall out of step.
+   ─────────────────────────────────────────────────────────────────────────── */
+function syncMenus() {
+  const set = (id, on) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', !!on);
+  };
+  const dis = (id, off) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('off', !!off);
+  };
+
+  dis('m-undo', !HIST || !HIST.u.length);
+  dis('m-redo', !HIST || !HIST.r.length);
+  const nSel = selectedIds.size;
+  dis('m-del',  !nSel);
+  dis('m-rccw', !nSel);
+  dis('m-rcw',  !nSel);
+
+  // KREATE has no sheets at all, so every row in the Sheet menu greys out
+  // together rather than the menu vanishing from the bar.
+  const kanvas = (mode === 'kanvas');
+  for (const el of document.querySelectorAll('.sheet-op')) el.classList.toggle('off', !kanvas);
+  if (kanvas) dis('m-delsheet', SHEETS.length <= 1);
+
+  const s = kanvas ? activeSheet() : null;
+  set('m-port', s && s.orient === 'p');
+  set('m-land', s && s.orient === 'l');
+  set('m-bind', bindArtToSheet);
+
+  set('m-grid',   gridIsOn());
+  set('m-snap',   snapEnabled);
+  set('m-rulers', showRulers);
+  set('m-kanvas', mode === 'kanvas');
+  set('m-kreate', mode === 'kreate');
+}
+
+(function bindMenus() {
+  for (const item of document.querySelectorAll('.mbar-item')) {
+    const name = item.dataset.menu;
+    item.addEventListener('click', e => {
+      // A tap on a row inside the panel is that row's business, not the
+      // header's — the panel is a DOM child of the header it hangs from.
+      if (e.target.closest('.mdrop')) return;
+      e.stopPropagation();
+      if (openMenuName === name) closeMenus(); else openMenu(name);
+    });
+    // Inert until a menu is open. See the note at the top of this section.
+    item.addEventListener('mouseenter', () => {
+      if (openMenuName && openMenuName !== name) openMenu(name);
+    });
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.mbar')) closeMenus();
+  });
+  // A menu anchored to a bar that scrolls underneath it would end up pointing
+  // at the wrong header, so close rather than chase.
+  const bar = document.getElementById('topbar');
+  if (bar) bar.addEventListener('scroll', closeMenus, { passive:true });
+  window.addEventListener('resize', closeMenus);
+})();
+
+/* ── Select All ───────────────────────────────────────────────────────────
+   Hidden layers stay out of it. Selecting what you cannot see, then nudging
+   or deleting it, is a surprise with no visible cause.
+   ─────────────────────────────────────────────────────────────────────────── */
+function selectAll() {
+  const vis = visibleObjects().filter(o => o.type !== 'erase');
+  if (!vis.length) { toast('Nothing to select'); return; }
+  selectedIds.clear();
+  for (const o of vis) selectedIds.add(o.id);
+  if (tool !== 'select') setTool('select');
+  updateProps(); scheduleDraw();
+  toast(vis.length + ' object' + (vis.length === 1 ? '' : 's') + ' selected');
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    PDF — WRITER
 
    A PDF is written here directly, by hand, rather than through a library.
@@ -8982,6 +9285,7 @@ document.addEventListener('keydown', e => {
     // export dialog carries Print as one of its buttons.
     if (k === 'p') { e.preventDefault(); openPdfExport(); return; }
     if (k === 'o') { e.preventDefault(); e.shiftKey ? openPDF() : openKVS(); return; }
+    if (k === 'a') { e.preventDefault(); selectAll(); return; }
     if (k === 'r' && e.shiftKey) { e.preventDefault(); rotateSheet(true); return; }
     if (e.key === 'Enter') { e.preventDefault(); openPaperPicker(true); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); nextSheet(1); return; }
@@ -8990,7 +9294,8 @@ document.addEventListener('keydown', e => {
   }
 
   if (e.key === 'Escape')  { cancelPending(); selectedIds.clear();
-                             closePaperPicker(); closePdfImport(); closePdfExport();
+                             closeMenus(); closePaperPicker();
+                             closePdfImport(); closePdfExport();
                              document.getElementById('kbd-modal').classList.remove('on');
                              updateProps(); scheduleDraw(); return; }
   // Plain Enter — the keyboard equivalent of double-tap / COMMIT: locks the
