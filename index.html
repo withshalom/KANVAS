@@ -347,6 +347,85 @@ body.touch-mode #center-fab.show { display:flex; }
   stroke-linecap:round; stroke-linejoin:round;
 }
 #kompass-commit-fab:active { transform:scale(0.96); }
+
+/* The typed-radius box. Amber to match the compass rig drawn on canvas,
+   turning accent when a number is actually driving the span. Fixed, because
+   it is positioned against the canvas rect in viewport coordinates. */
+/* ── SAVE AS DIALOG ── */
+#saveas-overlay {
+  position: fixed; inset: 0; z-index: 1400;
+  background: rgba(0,0,0,0.62); backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center;
+}
+#saveas-overlay.open { display: flex; }
+#saveas-dialog {
+  width: min(420px, 92vw);
+  background: #0d1018; border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px; box-shadow: 0 18px 60px rgba(0,0,0,0.7);
+  overflow: hidden;
+}
+.saveas-head {
+  padding: 12px 16px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #7de3ff; border-bottom: 1px solid rgba(255,255,255,0.10);
+  font-family: 'Fira Code', monospace;
+}
+.saveas-body { padding: 16px; }
+.saveas-row {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 6px; padding: 0 10px;
+}
+.saveas-row:focus-within { border-color: #00d4ff; }
+#saveas-name {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: #eaf6ff; font-family: 'Fira Code', monospace; font-size: 14px;
+  padding: 10px 0;
+}
+#saveas-ext {
+  font-family: 'Fira Code', monospace; font-size: 14px; color: #6f8a9c; flex-shrink: 0;
+}
+.saveas-note { font-size: 11px; color: #6f8a9c; margin-top: 8px; }
+.saveas-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.saveas-btn {
+  padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.05); color: #cfe3ee;
+}
+.saveas-btn:hover { background: rgba(255,255,255,0.10); }
+.saveas-btn.ok { background: rgba(0,212,255,0.16); border-color: #00d4ff; color: #7de3ff; }
+.saveas-btn.ok:hover { background: rgba(0,212,255,0.26); }
+
+#kompass-r-box {
+  position:fixed; z-index:222;
+  pointer-events:none;              /* rides the cursor; must not eat hover */
+  display:flex; gap:1px;
+  background:var(--border);
+  border:1px solid rgba(180,118,32,0.95);
+  border-radius:4px;
+  box-shadow:0 0 12px rgba(180,118,32,0.28), 0 2px 8px rgba(0,0,0,0.7);
+  overflow:hidden;
+}
+#kompass-r-box .kr-field {
+  display:flex; align-items:center; gap:5px;
+  padding:3px 7px; background:var(--glass2);
+}
+#kompass-r-box label {
+  font-family:var(--fm); font-size:8.5px; letter-spacing:0.14em;
+  color:var(--t3); text-transform:uppercase;
+}
+#kompass-r-box span { font-family:var(--fm); font-size:10px; color:var(--t2); }
+#kompass-r-box input {
+  width:62px; background:transparent; border:none; outline:none;
+  font-family:var(--fm); font-size:12px; color:var(--t1);
+  pointer-events:auto;              /* the one thing that should intercept */
+  caret-color:rgba(200,148,60,1);
+}
+#kompass-r-box input::-webkit-outer-spin-button,
+#kompass-r-box input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+#kompass-r-box #kompass-sweep-input { width:48px; }
+#kompass-r-box.swplocked { border-color:var(--a1); }
+#kompass-r-box.swplocked #kompass-sweep-input { color:var(--a1); }
+#kompass-r-box.locked { border-color:var(--a1); box-shadow:0 0 12px var(--a1g), 0 2px 8px rgba(0,0,0,0.7); }
+#kompass-r-box.locked input { color:var(--a1); }
 body.touch-mode #kompass-commit-fab.show { display:flex; }
 /* Hand the pill the opposite corner so the two never collide. */
 body.touch-mode #page-pill { left:10px; right:auto; }
@@ -695,6 +774,69 @@ kbd {
   background:var(--t4); border:1px solid var(--border); color:var(--t1);
 }
 
+/* ── PDF dialogs ──────────────────────────────────────────────────────────
+   The import dialog asks the one question a PDF cannot answer for itself:
+   what should happen to the text. Each option is a card rather than a radio
+   button, because the difference between them needs a sentence to explain and
+   a sentence does not fit beside a 13px control — least of all on a tablet,
+   which is what this program is for. */
+.pdf-file-head {
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  padding:10px 12px; margin-bottom:18px; border-radius:8px;
+  background:var(--sunken); border:1px solid var(--border);
+}
+.pdf-file-name { font-size:13px; font-weight:700; color:var(--t1);
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.pdf-file-meta { font-family:var(--fm); font-size:9.5px; color:var(--t3); letter-spacing:0.03em; }
+
+.pdf-sec { margin-bottom:18px; }
+.pdf-sec-h {
+  font-family:var(--fm); font-size:9px; letter-spacing:0.20em;
+  text-transform:uppercase; color:var(--t3); margin-bottom:8px;
+}
+.pdf-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+.pdf-card {
+  padding:10px 12px; border-radius:8px; cursor:pointer; text-align:left;
+  background:var(--sunken); border:1px solid var(--border); color:var(--t2);
+  transition:background .14s, border-color .14s, color .14s;
+}
+.pdf-card:hover { background:var(--hover); color:var(--t1); border-color:var(--border-hi); }
+.pdf-card.act   { background:var(--a1g); border-color:var(--a2); color:var(--a1); }
+.pdf-card-n { font-size:12.5px; font-weight:700; margin-bottom:3px; }
+.pdf-card-d { font-size:10.5px; line-height:1.45; color:var(--t3); }
+.pdf-card.act .pdf-card-d { color:var(--t2); }
+
+.pdf-row { display:flex; align-items:center; gap:9px; }
+.pdf-row input[type=text] {
+  flex:1; height:32px; padding:0 10px; border-radius:6px;
+  background:var(--sunken); border:1px solid var(--border);
+  color:var(--t1); font-family:var(--fm); font-size:11.5px; outline:none;
+}
+.pdf-row input[type=text]:focus { border-color:var(--a2); }
+.pdf-hint { font-size:10.5px; color:var(--t3); line-height:1.5; margin-top:7px; }
+.pdf-warn {
+  font-size:11px; line-height:1.5; color:var(--amber);
+  padding:9px 11px; border-radius:7px; margin-bottom:16px;
+  background:rgba(255,179,71,0.07); border:1px solid rgba(255,179,71,0.24);
+}
+.pdf-status {
+  font-family:var(--fm); font-size:10px; color:var(--a1);
+  letter-spacing:0.04em; min-height:14px; flex:1; text-align:left;
+}
+.pdf-toggle {
+  display:flex; align-items:center; gap:9px; cursor:pointer;
+  padding:9px 11px; border-radius:7px;
+  background:var(--sunken); border:1px solid var(--border); color:var(--t2);
+  font-size:11.5px; text-align:left; width:100%;
+}
+.pdf-toggle:hover { background:var(--hover); color:var(--t1); }
+.pdf-toggle .box {
+  width:15px; height:15px; flex-shrink:0; border-radius:4px;
+  border:1px solid var(--border-hi); background:var(--void);
+}
+.pdf-toggle.act { color:var(--a1); border-color:var(--a2); }
+.pdf-toggle.act .box { background:var(--a2); border-color:var(--a1); }
+
 /* ═══════════════════════════════ MOBILE ═══════════════════════════════════ */
 #drawer-toggle, #props-toggle {
   display:none; position:fixed; top:calc(var(--th) + var(--tabh) + 6px); z-index:150;
@@ -802,7 +944,15 @@ kbd {
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
       <span class="lbl">Save</span>
     </button>
-    <input type="file" id="kvs-file" accept=".kvs,.vad,application/json" style="display:none" onchange="onKVSFile(event)">
+    <button class="tb-btn" onclick="openPDF()" title="Import a PDF as editable vectors">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><polyline points="9 15 12 18 15 15"/></svg>
+      <span class="lbl">PDF</span>
+    </button>
+    <!-- Open takes either format and routes on the extension, so there is no
+         wrong button to press. The second input exists only so the dedicated
+         PDF control offers a PDF-only file list, which matters on a tablet. -->
+    <input type="file" id="kvs-file" accept=".kvs,.vad,.pdf,application/json,application/pdf" style="display:none" onchange="onKVSFile(event)">
+    <input type="file" id="pdf-file" accept=".pdf,application/pdf" style="display:none" onchange="onPDFFile(event)">
 
     <div class="tb-sep"></div>
 
@@ -845,8 +995,8 @@ kbd {
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
       <span class="lbl">PNG</span>
     </button>
-    <button class="tb-btn" onclick="printPDF()" title="Print / PDF">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><rect x="2" y="14" width="20" height="8" rx="1"/></svg>
+    <button class="tb-btn" onclick="openPdfExport()" title="Export vector PDF (Ctrl+P)">
+      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><rect x="2" y="14" width="20" height="8" rx="1"/><path d="M12 2v6"/><polyline points="9 5 12 2 15 5"/></svg>
       <span class="lbl">PDF</span>
     </button>
     <button class="tb-btn icon-only" onclick="toggleKbd()" title="Shortcuts (?)">
@@ -899,7 +1049,7 @@ kbd {
         <span class="tl">ERASE</span>
       </button>
 
-      <button class="tbtn" data-tool="select" onclick="setTool('select')" title="Select (V)">
+      <button class="tbtn" data-tool="select" onclick="setTool('select')" title="Select (K)">
         <svg viewBox="0 0 24 24"><path d="m5 3 14 9-7 1-4 7z"/></svg>
         <span class="tl">SELECT</span>
       </button>
@@ -923,7 +1073,7 @@ kbd {
         <button class="in-btn" data-input="circle" onclick="setInput('circle')" title="Circle \u2014 centre and radius (C)">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.4"/></svg><span>Circle</span>
         </button>
-        <button class="in-btn" data-input="kompass" onclick="setInput('kompass')" title="Kompass \u2014 pivot, then swing (K)">
+        <button class="in-btn" data-input="kompass" onclick="setInput('kompass')" title="Kompass \u2014 pivot, then swing (V)">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"/><path d="M12 6.5 5 20"/><path d="M12 6.5 19 20"/><path d="M7.5 17a7 7 0 0 0 9 0"/></svg><span>Kompass</span>
         </button>
         <button class="in-btn" data-input="bezier" onclick="setInput('bezier')" title="Bezier \u2014 place points (P)">
@@ -1217,6 +1367,46 @@ kbd {
   COMMIT
 </button>
 
+<!-- KOMPASS radius — the typed override for the span. Ported from the
+     drafting build, where typing a number while the compass is aiming is
+     what turns a gesture into a dimension. It rides the live span tip in
+     viewport coordinates (updateKompassRBox), and never intercepts pointer
+     events except on the field itself, so hovering the canvas underneath
+     keeps working. -->
+<!-- SAVE AS — one naming dialog for every format. Shown only when the browser
+     has no native file picker; where showSaveFilePicker() exists the OS dialog
+     is used instead, so the folder is chosen too. -->
+<div id="saveas-overlay">
+  <div id="saveas-dialog">
+    <div class="saveas-head">Save as</div>
+    <div class="saveas-body">
+      <div class="saveas-row">
+        <input id="saveas-name" type="text" autocomplete="off" spellcheck="false"
+               onkeydown="saveAsKeydown(event)" placeholder="file name">
+        <span id="saveas-ext"></span>
+      </div>
+      <div class="saveas-note">Name this file before it is written.</div>
+      <div class="saveas-btns">
+        <button class="saveas-btn cancel" onclick="saveAsCancel()">Cancel</button>
+        <button class="saveas-btn ok" onclick="saveAsConfirm()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="kompass-r-box" style="display:none;">
+  <div class="kr-field">
+    <label>R</label>
+    <input id="kompass-r-input" type="number" step="0.1" min="0" inputmode="decimal" autocomplete="off"/>
+    <span>mm</span>
+  </div>
+  <div class="kr-field kr-sweep">
+    <label>SWP</label>
+    <input id="kompass-sweep-input" type="number" step="1" inputmode="decimal" autocomplete="off"/>
+    <span>&#176;</span>
+  </div>
+</div>
+
 <!-- Floating CENTER — the touch way back to square. Shown by
      updateCenterFab() only while the view is actually off. -->
 <button id="center-fab" onclick="centerView()" aria-label="Centre and straighten the view">
@@ -1281,45 +1471,207 @@ kbd {
   </div>
 </div>
 
+<!-- ══════════════════════════════ PDF IMPORT ═════════════════════════════ -->
+<!-- The text question is asked, never guessed. A PDF stores glyphs and
+     positions, not paragraphs, so "keep it editable" and "keep it exact" are
+     genuinely different files and only the person importing knows which one
+     they came for. CorelDRAW asks the same question for the same reason. -->
+<div class="modal-scrim" id="pdf-import-modal">
+  <div class="modal">
+    <h2>Import PDF</h2>
+    <p class="lede">
+      Paths, rectangles and curves come in as real geometry &#8212; nothing is
+      traced or rasterised. Choose what should become of the text.
+    </p>
+
+    <div class="pdf-file-head">
+      <span class="pdf-file-name" id="pdfi-file">&#8212;</span>
+      <span class="pdf-file-meta" id="pdfi-pages"></span>
+      <span class="pdf-file-meta" id="pdfi-size"></span>
+    </div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Text</div>
+      <div class="pdf-cards">
+        <button class="pdf-card act" data-pdf-group="text" data-pdf-value="live"
+                onclick="pdfPickCard('text','live')">
+          <div class="pdf-card-n">Editable text</div>
+          <div class="pdf-card-d">Stays typeable. Re-set in an available face,
+            so line lengths shift a little.</div>
+        </button>
+        <button class="pdf-card" data-pdf-group="text" data-pdf-value="curves"
+                onclick="pdfPickCard('text','curves')">
+          <div class="pdf-card-n">Curves</div>
+          <div class="pdf-card-d">Exact glyph outlines as bezier paths. Shapes
+            are permanent; the words are not.</div>
+        </button>
+        <button class="pdf-card" data-pdf-group="text" data-pdf-value="lines"
+                onclick="pdfPickCard('text','lines')">
+          <div class="pdf-card-n">Lines</div>
+          <div class="pdf-card-d">Outlines flattened to straight segments &#8212;
+            for plotters, cutters and CNC.</div>
+        </button>
+      </div>
+      <div class="pdf-hint" id="pdfi-lines-row" style="display:none;">
+        <div class="pdf-sec-h" style="margin:12px 0 8px;">Segment length</div>
+        <div class="pdf-cards">
+          <button class="pdf-card" data-pdf-group="tol" data-pdf-value="fine"
+                  onclick="pdfPickCard('tol','fine')">
+            <div class="pdf-card-n">Fine</div><div class="pdf-card-d">Smoothest, most points.</div>
+          </button>
+          <button class="pdf-card act" data-pdf-group="tol" data-pdf-value="normal"
+                  onclick="pdfPickCard('tol','normal')">
+            <div class="pdf-card-n">Normal</div><div class="pdf-card-d">Indistinguishable in print.</div>
+          </button>
+          <button class="pdf-card" data-pdf-group="tol" data-pdf-value="coarse"
+                  onclick="pdfPickCard('tol','coarse')">
+            <div class="pdf-card-n">Coarse</div><div class="pdf-card-d">Fewest nodes to edit.</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Pages</div>
+      <div class="pdf-row">
+        <input type="text" id="pdfi-range" placeholder="all pages" autocomplete="off"
+               spellcheck="false" onkeydown="event.stopPropagation()">
+      </div>
+      <div class="pdf-hint">Leave empty for every page, or give a range like
+        <kbd>1-3, 7, 10-</kbd>.</div>
+    </div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Where it lands</div>
+      <div class="pdf-cards">
+        <button class="pdf-card act" data-pdf-group="place" data-pdf-value="sheets"
+                onclick="pdfPickCard('place','sheets')">
+          <div class="pdf-card-n">New sheets</div>
+          <div class="pdf-card-d">One sheet per page, on the nearest trim.</div>
+        </button>
+        <button class="pdf-card" data-pdf-group="place" data-pdf-value="current"
+                onclick="pdfPickCard('place','current')">
+          <div class="pdf-card-n">This space</div>
+          <div class="pdf-card-d">Onto the sheet you are on, as one undoable step.</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <span class="pdf-status" id="pdfi-status"></span>
+      <button class="mbtn" onclick="closePdfImport()">Cancel</button>
+      <button class="mbtn primary" id="pdfi-go" onclick="pdfCommitImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ PDF EXPORT ═════════════════════════════ -->
+<div class="modal-scrim" id="pdf-export-modal">
+  <div class="modal">
+    <h2>Export PDF</h2>
+    <p class="lede">
+      Written as true vector: every arc leaves as four cubic segments, not four
+      hundred line segments, and text stays selectable and searchable.
+    </p>
+
+    <div class="pdf-warn" id="pdfe-raster-warn" style="display:none;"></div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Pages</div>
+      <div class="pdf-cards">
+        <button class="pdf-card act" data-pdf-group="scope" data-pdf-value="current"
+                onclick="pdfPickCard('scope','current')">
+          <div class="pdf-card-n">This sheet</div>
+          <div class="pdf-card-d">One page, at its exact trim.</div>
+        </button>
+        <button class="pdf-card" data-pdf-group="scope" data-pdf-value="all"
+                onclick="pdfPickCard('scope','all')">
+          <div class="pdf-card-n">Every sheet</div>
+          <div class="pdf-card-d">One page each, in tab order.</div>
+        </button>
+      </div>
+      <div class="pdf-hint" id="pdfe-scope-hint"></div>
+    </div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Layers</div>
+      <button class="pdf-toggle act" id="pdfe-layers" onclick="this.classList.toggle('act')">
+        <span class="box"></span>
+        <span>Write layers as PDF optional content &#8212; Acrobat and Illustrator
+          show them in the layers panel and let you switch them off.</span>
+      </button>
+    </div>
+
+    <div class="pdf-sec">
+      <div class="pdf-sec-h">Airbrush resolution</div>
+      <div class="pdf-cards">
+        <button class="pdf-card" data-pdf-group="dpi" data-pdf-value="150"
+                onclick="pdfPickCard('dpi','150')">
+          <div class="pdf-card-n">150 dpi</div><div class="pdf-card-d">Screen and proofs.</div>
+        </button>
+        <button class="pdf-card act" data-pdf-group="dpi" data-pdf-value="300"
+                onclick="pdfPickCard('dpi','300')">
+          <div class="pdf-card-n">300 dpi</div><div class="pdf-card-d">Print standard.</div>
+        </button>
+        <button class="pdf-card" data-pdf-group="dpi" data-pdf-value="600"
+                onclick="pdfPickCard('dpi','600')">
+          <div class="pdf-card-n">600 dpi</div><div class="pdf-card-d">Large format.</div>
+        </button>
+      </div>
+      <div class="pdf-hint">Only affects airbrush strokes and placed images.
+        Every path is resolution independent whatever this says.</div>
+    </div>
+
+    <div class="modal-actions">
+      <span class="pdf-status" id="pdfe-status"></span>
+      <button class="mbtn" onclick="closePdfExport()">Cancel</button>
+      <button class="mbtn" onclick="closePdfExport(); printPDF();">Print&#8230;</button>
+      <button class="mbtn primary" id="pdfe-go" onclick="pdfCommitExport()">Export PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════════════ SHORTCUTS ═══════════════════════════════ -->
 <div class="modal-scrim" id="kbd-modal" onclick="if(event.target===this)toggleKbd()">
   <div class="modal">
     <h2>Keyboard</h2>
     <p class="lede">
-      Single keys pick tools. Modifiers act on the document. On touch, two
+Every tool, input and brush is a single bare letter &#8212; no modifier is ever required. Ctrl/Cmd acts on the document. On touch, two
       fingers that <em>move</em> transform the view &#8212; spread to zoom, slide to
       pan, twist to turn the sheet. Two fingers that <em>stay put</em> place a
       shape between them, whenever the active tool takes two points.
     </p>
     <div class="kbd-grid">
       <div class="kbd-col">
-        <h4>Draw &#183; presets</h4>
-        <div class="kbd-line"><span>Free + Ink</span><kbd>B</kbd></div>
-        <div class="kbd-line"><span>Free + Pencil</span><kbd>N</kbd></div>
-        <div class="kbd-line"><span>Free + Charcoal</span><kbd>G</kbd></div>
-        <div class="kbd-line"><span>Free + Shade</span><kbd>H</kbd></div>
-        <div class="kbd-line"><span>Free + Marker</span><kbd>J</kbd></div>
-        <div class="kbd-line"><span>Free + Airbrush</span><kbd>U</kbd></div>
-        <div class="kbd-line"><span>Free + Calligraphy</span><kbd>Q</kbd></div>
-        <div class="kbd-line"><span>Line + Technical</span><kbd>L</kbd></div>
-        <div class="kbd-line"><span>Arc + Technical</span><kbd>A</kbd></div>
-        <div class="kbd-line"><span>Circle + Technical</span><kbd>C</kbd></div>
-        <div class="kbd-line"><span>Kompass + Technical</span><kbd>K</kbd></div>
-        <div class="kbd-line"><span>Bezier + Ink</span><kbd>P</kbd></div>
+        <h4>Input &#183; how the mark is made</h4>
+        <div class="kbd-line"><span>Freehand</span><kbd>B</kbd></div>
+        <div class="kbd-line"><span>Line</span><kbd>L</kbd></div>
+        <div class="kbd-line"><span>Arc</span><kbd>A</kbd></div>
+        <div class="kbd-line"><span>Circle</span><kbd>C</kbd></div>
+        <div class="kbd-line"><span>Kompass</span><kbd>V</kbd></div>
+        <div class="kbd-line"><span>Bezier</span><kbd>P</kbd></div>
+        <h4 style="margin-top:12px;">Brush &#183; what it is drawn with</h4>
+        <div class="kbd-line"><span>Technical</span><kbd>W</kbd></div>
+        <div class="kbd-line"><span>Ink</span><kbd>Z</kbd></div>
+        <div class="kbd-line"><span>Calligraphy</span><kbd>Q</kbd></div>
+        <div class="kbd-line"><span>Pencil</span><kbd>N</kbd></div>
+        <div class="kbd-line"><span>Charcoal</span><kbd>O</kbd></div>
+        <div class="kbd-line"><span>Shade</span><kbd>H</kbd></div>
+        <div class="kbd-line"><span>Marker</span><kbd>J</kbd></div>
+        <div class="kbd-line"><span>Airbrush</span><kbd>U</kbd></div>
       </div>
       <div class="kbd-col">
-        <h4>Input only</h4>
-        <div class="kbd-line"><span>Keeps your brush</span><kbd>&#8679; B L A C K P</kbd></div>
         <div class="kbd-line" style="color:var(--t3);font-size:10.5px;line-height:1.4;">
-          <span>A mark is an input and a brush. Presets set both; shift sets the input alone.</span></div>
+          <span>A mark is an input and a brush. Each axis has its own key and
+          changes only itself &#8212; no modifier is needed anywhere.</span></div>
         <h4 style="margin-top:12px;">Tools</h4>
         <div class="kbd-line"><span>Rectangle</span><kbd>M</kbd></div>
         <div class="kbd-line"><span>Ellipse</span><kbd>E</kbd></div>
         <div class="kbd-line"><span>Polygon</span><kbd>Y</kbd></div>
         <div class="kbd-line"><span>Text</span><kbd>T</kbd></div>
-        <div class="kbd-line"><span>Dimension</span><kbd>D</kbd></div>
+        <div class="kbd-line"><span>Dimension (cycles)</span><kbd>D</kbd></div>
         <div class="kbd-line"><span>Erase</span><kbd>X</kbd></div>
-        <div class="kbd-line"><span>Select</span><kbd>V</kbd></div>
+        <div class="kbd-line"><span>Select</span><kbd>K</kbd></div>
         <div class="kbd-line"><span>Add to selection</span><kbd>&#8679; tap</kbd></div>
         <div class="kbd-line"><span>Eyedropper</span><kbd>I</kbd></div>
       </div>
@@ -1331,6 +1683,7 @@ kbd {
         <div class="kbd-line"><span>Grid</span><kbd>G</kbd></div>
         <div class="kbd-line"><span>Snap</span><kbd>S</kbd></div>
         <div class="kbd-line"><span>Rulers</span><kbd>R</kbd></div>
+        <div class="kbd-line"><span>Brush size</span><kbd>[ ]</kbd></div>
         <div class="kbd-line"><span>Swap space</span><kbd>Tab</kbd></div>
       </div>
       <div class="kbd-col">
@@ -1352,6 +1705,9 @@ kbd {
         <div class="kbd-line"><span>Undo</span><kbd>Ctrl Z</kbd></div>
         <div class="kbd-line"><span>Redo</span><kbd>Ctrl &#8679; Z</kbd></div>
         <div class="kbd-line"><span>Save .kvs</span><kbd>Ctrl S</kbd></div>
+        <div class="kbd-line"><span>Open</span><kbd>Ctrl O</kbd></div>
+        <div class="kbd-line"><span>Import PDF</span><kbd>Ctrl &#8679; O</kbd></div>
+        <div class="kbd-line"><span>Export PDF</span><kbd>Ctrl P</kbd></div>
         <div class="kbd-line"><span>New sheet</span><kbd>Ctrl &#8629;</kbd></div>
         <div class="kbd-line"><span>Next sheet</span><kbd>Ctrl &#8594;</kbd></div>
         <div class="kbd-line"><span>Turn sheet</span><kbd>Ctrl &#8679; R</kbd></div>
@@ -1510,13 +1866,72 @@ let MEM  = null;
 let HIST = null;
 const HIST_MAX = 90;
 
+// ── SHEET NAMING ──────────────────────────────────────────────────────────────
+// Four separate paths named sheets and none checked what was already there.
+// The worst case is interop: a .kvs written by KAD carries sheetName "Sheet 1",
+// and the single-sheet import branch trusted it over everything else — so every
+// file opened from the drafting build arrived as another "Sheet 1". The
+// filename, which is the title the user actually chose at save time, was
+// discarded before deserializeDoc ever saw it.
+
+// Next free "Sheet N", read from the names ACTUALLY PRESENT rather than from a
+// counter. A counter drifts the moment a sheet is renamed, imported or loaded.
+function nextSheetNumber() {
+  let hi = 0;
+  for (const s of SHEETS) {
+    const m = /^Sheet (\d+)$/.exec(s.name || '');
+    if (m) hi = Math.max(hi, parseInt(m[1], 10));
+  }
+  hi = Math.max(hi, (sheetSeq || 1) - 1);
+  return hi + 1;
+}
+
+// Guarantee a name nothing else holds. Suffixes rather than renumbering, so an
+// imported "bracket" stays recognisably "bracket" as "bracket (2)".
+function uniqueSheetName(desired, skipIdx) {
+  let base = String(desired || '').trim().slice(0, 40) || ('Sheet ' + nextSheetNumber());
+  const taken = new Set();
+  SHEETS.forEach((s, i) => { if (i !== skipIdx) taken.add((s.name || '').toLowerCase()); });
+  if (!taken.has(base.toLowerCase())) return base;
+  const m = /^(.*?) \((\d+)\)$/.exec(base);      // grow " (n)" rather than stacking
+  if (m) base = m[1];
+  for (let n = 2; n < 9999; n++) {
+    const c = base + ' (' + n + ')';
+    if (!taken.has(c.toLowerCase())) return c;
+  }
+  return base + ' (' + Date.now() + ')';
+}
+
+function nameFromFile(fileName) {
+  return String(fileName || '')
+    .replace(/\.(kvs|vad|json)$/i, '')
+    .replace(/[_]+/g, ' ')
+    .trim().slice(0, 40);
+}
+
+// Last line of defence: repair duplicates however they arrive — an older file,
+// a hand edit, or code added later that assigns .name directly. Only touches
+// anything when a duplicate actually exists.
+function dedupeSheetNames() {
+  const seen = new Set();
+  SHEETS.forEach((s, i) => {
+    const k = (s.name || '').toLowerCase();
+    if (!s.name || seen.has(k)) s.name = uniqueSheetName(s.name || ('Sheet ' + nextSheetNumber()), i);
+    seen.add((s.name || '').toLowerCase());
+  });
+}
+
 function newSheet(paperKey, orient) {
   const key = PAPERS[paperKey] ? paperKey : 'a4';
   const o = orient === 'l' ? 'l' : 'p';
   const t = paperTrim({ paper:key, orient:o });
+  // Name BEFORE the id increments. In an object literal `id: sheetSeq++`
+  // evaluates first, so nextSheetNumber() would already be reading the bumped
+  // counter and the very first sheet came out as "Sheet 2".
+  const nm = uniqueSheetName('Sheet ' + nextSheetNumber());
   return {
-    id: sheetSeq,
-    name: 'Sheet ' + sheetSeq++,
+    id: sheetSeq++,
+    name: nm,
     paper: key,
     orient: o,
     mem: blankMem(),
@@ -1809,6 +2224,173 @@ function updateKompassCommitFab() {
   el.classList.toggle('show', ready);
 }
 
+// ── KOMPASS RADIUS BOX ──
+// The typed override for the span. Typing a number LOCKS it while the pointer
+// keeps supplying the direction; Enter locks and advances exactly as a second
+// tap would, so the whole sequence can be driven without leaving the field.
+function kompassBoxLive() {
+  return tool === 'draw' && input === 'kompass' &&
+         kompassPhase !== 'idle' && !!kompassCenter;
+}
+function showKompassRBox() {
+  const el = document.getElementById('kompass-r-box');
+  if (el) el.style.display = 'flex';
+  updateKompassRBox();
+}
+function hideKompassRBox() {
+  const el = document.getElementById('kompass-r-box');
+  if (!el) return;
+  const inp = document.getElementById('kompass-r-input');
+  // Drop focus before hiding. Focus retained across display:none is how a
+  // field ends up silently eating the next keystrokes.
+  if (inp && document.activeElement === inp) inp.blur();
+  el.style.display = 'none';
+  el.classList.remove('locked');
+}
+function updateKompassRBox() {
+  const el = document.getElementById('kompass-r-box');
+  if (!el) return;
+  if (!kompassBoxLive()) { hideKompassRBox(); return; }
+  el.style.display = 'flex';
+  el.classList.toggle('locked', kompassRLocked);
+
+  const r = kompassEffRadius();
+  const inp = document.getElementById('kompass-r-input');
+  // Never fight the caret: only mirror the live value in while not typing.
+  if (inp && document.activeElement !== inp) inp.value = r.toFixed(2);
+  const swp = document.getElementById('kompass-sweep-input');
+  if (swp && document.activeElement !== swp) {
+    swp.value = (kompassPhase === 'sweep')
+      ? Math.round(Math.abs(kompassEffSweep())*180/Math.PI) : '';
+  }
+  el.classList.toggle('swplocked', kompassSweepLocked);
+
+  // Ride the live span tip. Positioned through W2S so it tracks correctly at
+  // any view tilt, then clamped to the canvas rect rather than the window, so
+  // it never drifts out over the toolbar or the props column.
+  const cv = document.getElementById('main-canvas');
+  if (!cv) return;
+  const rect = cv.getBoundingClientRect();
+  const live = kompassLivePt();
+  const dx = live.x - kompassCenter.x, dy = live.y - kompassCenter.y;
+  const aim = (Math.hypot(dx, dy) < 1e-9) ? 0 : Math.atan2(dy, dx);
+  const ang = (kompassPhase === 'sweep') ? kompassA0 + kompassEffSweep() : aim;
+  const rr  = (kompassPhase === 'sweep') ? kompassRadius : r;
+  const sp  = W2S(kompassCenter.x + Math.cos(ang)*rr,
+                  kompassCenter.y + Math.sin(ang)*rr);
+  const touch = document.body.classList.contains('touch-mode');
+  const bw = 176, bh = 30;
+  let bx = rect.left + sp.x + (touch ? -96 : 18);
+  let by = rect.top  + sp.y + (touch ? -78 : -18);
+  if (bx + bw > rect.right)  bx = rect.right - bw - 4;
+  if (bx < rect.left + 4)    bx = rect.left + 4;
+  if (by < rect.top + 4)     by = rect.top + sp.y + 22;
+  if (by + bh > rect.bottom) by = rect.bottom - bh - 4;
+  el.style.left = bx + 'px';
+  el.style.top  = by + 'px';
+}
+
+// True only for the tick in which a typed digit is SEEDING the field, as
+// opposed to the user focusing it to retype the value.
+let kompassSeeding = false;
+
+// Which field a typed digit belongs to is purely a function of the phase:
+// aiming the span types a RADIUS, swinging types an ANGLE. Nothing for the
+// user to select, and the two input routes can never disagree about what a
+// bare number means.
+// Advancing the phase has to hand focus to the field the NEW phase expects.
+// Without this, typing a radius, pressing Enter and typing an angle sends the
+// angle straight back into the radius field — it still has focus, and its own
+// keydown handler stops propagation before the document-level digit routing
+// ever sees the key. Only moves focus if the box already had it, so a
+// mouse-driven swing is never interrupted.
+function kompassSyncFieldFocus() {
+  const ae = document.activeElement;
+  if (!ae || (ae.id !== 'kompass-r-input' && ae.id !== 'kompass-sweep-input')) return;
+  const want = kompassActiveFieldId();
+  if (!want || ae.id === want) return;
+  const el = document.getElementById(want);
+  if (el) { kompassSeeding = true; el.focus(); el.value = ''; }
+}
+
+function kompassActiveFieldId() {
+  if (!kompassBoxLive()) return null;
+  return kompassPhase === 'sweep' ? 'kompass-sweep-input' : 'kompass-r-input';
+}
+
+(function(){
+  const swp = document.getElementById('kompass-sweep-input');
+  if (!swp) return;
+  swp.addEventListener('focus', function(){
+    const e2 = this;
+    setTimeout(() => { if (kompassSeeding) { kompassSeeding = false; return; } e2.select(); }, 0);
+  });
+  swp.addEventListener('input', function(){
+    const deg = parseFloat(this.value);
+    if (isNaN(deg) || deg <= 0) { kompassSweepLocked = false; kompassLockedSweep = 0; }
+    else { kompassSweepLocked = true; kompassLockedSweep = Math.min(Math.PI*2, deg*Math.PI/180); }
+    const box = document.getElementById('kompass-r-box');
+    if (box) box.classList.toggle('swplocked', kompassSweepLocked);
+    scheduleDraw();
+  });
+  swp.addEventListener('keydown', function(e){
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      kompassAdvance();
+      if (kompassBoxLive()) updateKompassRBox(); else hideKompassRBox();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      kompassSweepLocked = false; kompassLockedSweep = 0;
+      const box = document.getElementById('kompass-r-box');
+      if (box) box.classList.remove('swplocked');
+      this.blur(); scheduleDraw();
+    }
+  });
+})();
+(function(){
+  const inp = document.getElementById('kompass-r-input');
+  if (!inp) return;
+  // setTimeout(0) because mobile Safari and Chrome both override a
+  // synchronous select() a tick later.
+  //
+  // Select-on-focus is right when you TAB into the field to replace what is
+  // there, and wrong when a digit just seeded it: selecting the seed means
+  // the next keystroke REPLACES it, so typing 4 then 2 then .5 yields 2.5
+  // instead of 42.5. When seeding, leave the caret where setting .value put
+  // it — at the end. (A number input does not support setSelectionRange, so
+  // not selecting is the only way to place the caret there.)
+  inp.addEventListener('focus', function(){
+    const e2 = this;
+    setTimeout(() => {
+      if (kompassSeeding) { kompassSeeding = false; return; }
+      e2.select();
+    }, 0);
+  });
+  inp.addEventListener('input', function(){
+    const v = parseFloat(this.value);
+    if (isNaN(v) || v <= 0) { kompassRLocked = false; kompassLockedR = 0; }
+    else { kompassRLocked = true; kompassLockedR = v; }
+    const box = document.getElementById('kompass-r-box');
+    if (box) box.classList.toggle('locked', kompassRLocked);
+    scheduleDraw();
+  });
+  inp.addEventListener('keydown', function(e){
+    e.stopPropagation();          // never reaches the global shortcut map
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      kompassAdvance();
+      if (kompassBoxLive()) updateKompassRBox(); else hideKompassRBox();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      kompassRLocked = false; kompassLockedR = 0;
+      const box = document.getElementById('kompass-r-box');
+      if (box) box.classList.remove('locked');
+      this.blur(); scheduleDraw();
+    }
+  });
+})();
+
 // Show the button only when it would do something. The drift check is only
 // meaningful once the user has claimed the camera — an unclaimed one is being
 // healed to the fit every frame, so by definition it has not drifted.
@@ -1906,10 +2488,17 @@ function zoomFit(auto) {
   scheduleDraw();
 }
 
-function contentBounds() {
+// Defaults to the live space, but takes one explicitly so a caller that needs
+// the bounds of a space it is not currently in — the PDF writer, walking every
+// sheet — does not have to swap the global MEM and swap it back. That swap was
+// a latent bug: anything that threw in between would leave MEM pointing at the
+// wrong space with no way to notice.
+function contentBounds(mem) {
+  const M = mem || MEM;
+  if (!M) return null;
   let minX=1e9, minY=1e9, maxX=-1e9, maxY=-1e9, any=false;
   const hit = (x,y) => { if(x<minX)minX=x; if(y<minY)minY=y; if(x>maxX)maxX=x; if(y>maxY)maxY=y; any=true; };
-  for (const o of MEM.objects) {
+  for (const o of M.objects) {
     switch (o.type) {
       case 'stroke': case 'erase': case 'poly':
         if (o.pts) for (const p of o.pts) hit(p.x, p.y); break;
@@ -1920,6 +2509,7 @@ function contentBounds() {
       case 'rect':    hit(o.x, o.y); hit(o.x+o.w, o.y+o.h); break;
       case 'line':    hit(o.x1,o.y1); hit(o.x2,o.y2); break;
       case 'text':    hit(o.x, o.y); hit(o.x + (o.text.length*o.size*0.6), o.y + o.size); break;
+      case 'image':   hit(o.x, o.y); hit(o.x + o.w, o.y + o.h); break;
       case 'dim': case 'weld':
         if(o.p1) hit(o.p1.x,o.p1.y); if(o.p2) hit(o.p2.x,o.p2.y); break;
     }
@@ -1954,6 +2544,7 @@ function buildSheetTabs() {
   const el = document.getElementById('sheet-tabs');
   if (!el) return;
   ensureSheets();
+  dedupeSheetNames();
   el.innerHTML = '';
   SHEETS.forEach((s, i) => {
     const b = document.createElement('button');
@@ -2001,7 +2592,7 @@ function duplicateSheet() {
   const src = activeSheet();
   const copy = JSON.parse(JSON.stringify({ mem:src.mem }));
   SHEETS.splice(sheetIdx + 1, 0, {
-    id: sheetSeq, name: src.name + ' copy', paper: src.paper, orient: src.orient,
+    id: sheetSeq, name: uniqueSheetName(src.name + ' copy'), paper: src.paper, orient: src.orient,
     mem: copy.mem, cam: src.cam ? {...src.cam} : null, hist: blankHist(),
     ref: src.ref ? {...src.ref} : null, artK: src.artK != null ? src.artK : 1,
     gridOn: !!src.gridOn, gridSize: src.gridSize != null ? src.gridSize : null,
@@ -2015,7 +2606,12 @@ function renameSheet() {
   ensureSheets();
   const s = activeSheet();
   const n = prompt('Sheet name:', s.name);
-  if (n && n.trim()) { s.name = n.trim(); buildSheetTabs(); updateProps(); }
+  if (!n || !n.trim()) return;
+  // skipIdx so renaming a sheet to the name it already has is not a clash.
+  const unique = uniqueSheetName(n.trim(), sheetIdx);
+  if (unique !== n.trim()) toast('Renamed to ' + unique + ' \u00b7 that name was taken');
+  s.name = unique;
+  buildSheetTabs(); updateProps();
 }
 function deleteSheet() {
   if (mode !== 'kanvas') { toast('KREATE is a single space'); return; }
@@ -2129,13 +2725,18 @@ function transformSheetContent(objects, M, k, opt) {
       const r = M(pt); pt.x = r.x; pt.y = r.y;
       if (pt.w != null) pt.w *= k;
     }
-    if (o.beziers) for (const b of o.beziers) {
-      const a  = M({x:b.x0, y:b.y0}),   c1 = M({x:b.cx1,y:b.cy1});
-      const c2 = M({x:b.cx2,y:b.cy2}),  d  = M({x:b.x3, y:b.y3});
-      b.x0=a.x;   b.y0=a.y;   b.cx1=c1.x; b.cy1=c1.y;
-      b.cx2=c2.x; b.cy2=c2.y; b.x3=d.x;   b.y3=d.y;
-      if (b.w0 != null) b.w0 *= k;
-      if (b.w3 != null) b.w3 *= k;
+    // beziers is the outer contour; holes are the rest. Kept as separate
+    // arrays precisely so this loop can map each exactly once.
+    for (const contour of [o.beziers].concat(o.holes || [])) {
+      if (!contour) continue;
+      for (const b of contour) {
+        const a  = M({x:b.x0, y:b.y0}),   c1 = M({x:b.cx1,y:b.cy1});
+        const c2 = M({x:b.cx2,y:b.cy2}),  d  = M({x:b.x3, y:b.y3});
+        b.x0=a.x;   b.y0=a.y;   b.cx1=c1.x; b.cy1=c1.y;
+        b.cx2=c2.x; b.cy2=c2.y; b.x3=d.x;   b.y3=d.y;
+        if (b.w0 != null) b.w0 *= k;
+        if (b.w3 != null) b.w3 *= k;
+      }
     }
     if (o.cx != null && o.cy != null) { const p2 = M({x:o.cx,y:o.cy}); o.cx=p2.x; o.cy=p2.y; }
     if (o.x1 != null) {
@@ -2160,12 +2761,17 @@ function transformSheetContent(objects, M, k, opt) {
     if (o.width  != null) o.width  *= k;
     if (o.size   != null && typeof o.size === 'number') o.size *= k;
     if (o.offset != null) o.offset *= k;
+    // An image is a length in both directions. Its w/h are not caught by the
+    // rect branch above, which normalises corners rather than scaling extents.
+    if (o.type === 'image') { o.w *= k; o.h *= k; }
 
     if (opt.swapRR && o.type === 'ellipse') { const t = o.rx; o.rx = o.ry; o.ry = t; }
     if (opt.angle && o.type === 'arc') { o.a0 += opt.angle; o.a1 += opt.angle; }
     // Text turns with the paper too, or "everything rotates together" quietly
-    // excludes the one thing you actually read.
-    if (opt.textRot && o.type === 'text')
+    // excludes the one thing you actually read. Images are anchored at their
+    // bottom-left corner and rotate about it, so mapping the anchor and adding
+    // the same angle lands the bitmap exactly where the paper took it.
+    if (opt.textRot && (o.type === 'text' || o.type === 'image'))
       o.rot = (((o.rot||0) + opt.textRot) % 360 + 360) % 360;
   }
 }
@@ -2653,7 +3259,7 @@ const ROTATE_HANDLE_OFFSET = 34;   // px, screen space, handle above the box
 const ROTATE_HANDLE_R = 10;
 // Geometry with a genuine notion of "the same shape, turned". Rect and
 // ellipse are excluded on purpose — see the note above.
-const ROTATABLE_TYPES = new Set(['stroke','line','arc','path','poly','text','dim','weld']);
+const ROTATABLE_TYPES = new Set(['stroke','line','arc','path','poly','text','image','dim','weld']);
 // Marquee. `pending` covers the gap between pressing and travelling far
 // enough to mean a drag rather than a tap.
 const selBox = { active:false, pending:false, sx:0, sy:0, wx:0, wy:0 };
@@ -2841,10 +3447,44 @@ let kompassLastTapAt = -Infinity;
 let kompassLastTapX = 0, kompassLastTapY = 0;
 const KOMPASS_DBLTAP_MS = 320;
 const KOMPASS_DBLTAP_PX = 24;
+// Typed radius override, brought back from the drafting build. LOCKED means
+// the pointer no longer sets the span — it only aims the direction — which is
+// the same split a locked length has against a live angle when you type a
+// distance for LINE. The whole reason it can exist at all is that Kompass is
+// a TAP sequence: there is a real aiming phase with nothing held down, so
+// there is somewhere for a number to go.
+let kompassRLocked = false;
+let kompassLockedR = 0;
+// Typed SWEEP, the second half of the same idea. The radius answers "how
+// big", this answers "how far round" — together they turn the compass from a
+// gesture into a specification: R42.5 at 90 degrees is a dimension you can
+// state, not one you have to aim. A locked sweep leaves the pointer in charge
+// of DIRECTION only, so typing 90 and swinging anticlockwise gives 90
+// anticlockwise rather than fighting the number.
+let kompassSweepLocked = false;
+let kompassLockedSweep = 0;   // radians, magnitude only
+function kompassEffSweep() {
+  if (!kompassSweepLocked) return kompassSweep;
+  return (kompassSweep < 0 ? -1 : 1) * Math.abs(kompassLockedSweep);
+}
 function resetKompassState() {
   kompassCenter = null; kompassPhase = 'idle';
   kompassRadius = 0; kompassA0 = 0; kompassSweep = 0; kompassPrevAngle = 0;
   kompassLastTapAt = -Infinity;
+  kompassRLocked = false; kompassLockedR = 0;
+  kompassSweepLocked = false; kompassLockedSweep = 0;
+  if (typeof hideKompassRBox === 'function') hideKompassRBox();
+}
+// The live point the compass is reading, honouring snap exactly as the
+// rubber-band preview already does.
+function kompassLivePt() { return snapPt(mw.x, mw.y); }
+// Effective span: a typed radius wins over the pointer distance, but the
+// pointer still supplies the DIRECTION.
+function kompassEffRadius() {
+  if (kompassRLocked) return kompassLockedR;
+  if (!kompassCenter) return 0;
+  const w = kompassLivePt();
+  return Math.hypot(w.x - kompassCenter.x, w.y - kompassCenter.y);
 }
 // Shared by onMove's unconditional hover-tracking and by a single tap in the
 // sweep phase, which behaves exactly like a hover: it updates the live
@@ -2865,14 +3505,19 @@ function kompassTrackSweep(w) {
 // live-previewed state.
 function kompassAdvance() {
   if (kompassPhase === 'radius') {
-    const r = Math.hypot(mw.x-kompassCenter.x, mw.y-kompassCenter.y);
+    const w = kompassLivePt();
+    // Typed span wins; the pointer still supplies the direction.
+    const r = kompassEffRadius();
     if (r < 0.01) { toast('Move away from the centre first'); return; }
     kompassRadius = r;
-    kompassA0 = Math.atan2(mw.y-kompassCenter.y, mw.x-kompassCenter.x);
+    const dx = w.x - kompassCenter.x, dy = w.y - kompassCenter.y;
+    kompassA0 = (Math.hypot(dx, dy) < 1e-9) ? 0 : Math.atan2(dy, dx);
     kompassPrevAngle = kompassA0;
     kompassSweep = 0;
     kompassPhase = 'sweep';
     scheduleDraw();
+    if (typeof kompassSyncFieldFocus === 'function') kompassSyncFieldFocus();
+    if (typeof updateKompassRBox === 'function') updateKompassRBox();
     toast('Radius R' + r.toFixed(1) + ' \u00b7 now swing the arc');
   } else if (kompassPhase === 'sweep') {
     commitKompassArc();
@@ -2887,7 +3532,7 @@ const INPUTS = {
   line:     { label:'Line',     hint:'two points',  key:'l' },
   arc:      { label:'Arc',      hint:'three points',key:'a' },
   circle:   { label:'Circle',   hint:'centre + radius', key:'c' },
-  kompass:  { label:'Kompass',  hint:'pivot, then swing', key:'k' },
+  kompass:  { label:'Kompass',  hint:'pivot, then swing', key:'v' },
   bezier:   { label:'Bezier',   hint:'place points',key:'p' },
 };
 
@@ -3211,6 +3856,10 @@ function onDown(e) {
           kompassCenter = sp;
           kompassPhase = 'radius';
           mw = w;   // preview shows immediately, before any move at all
+          // The span is now aiming with nothing held down, which is exactly
+          // when a number can be typed into it.
+          showKompassRBox();
+          toast('Pivot set \u00b7 set the span, or type a radius');
         } else if (e.pointerType === 'touch') {
           const now = performance.now();
           const dt = now - kompassLastTapAt;
@@ -3286,6 +3935,11 @@ function onMove(e) {
   if (tool === 'draw' && input === 'kompass' && kompassPhase === 'sweep') {
     kompassTrackSweep(w);
     scheduleDraw();
+  }
+  // The box rides the live span tip, so it repaints on every move in BOTH
+  // phases — not only while sweeping.
+  if (tool === 'draw' && input === 'kompass' && kompassPhase !== 'idle') {
+    updateKompassRBox();
   }
   // Travelled past slop: this is a drag, not a hold, and not a tap.
   if (holdTimer && Math.hypot(e.clientX - holdX, e.clientY - holdY) > HOLD_SLOP) cancelHold();
@@ -3834,12 +4488,12 @@ function commitKompassArc() {
                             drawStyle()));
     toast('Circle R' + kompassRadius.toFixed(1) + ' \u00b7 full turn');
   } else {
-    const ccw = kompassSweep >= 0;
+    const ccw = kompassEffSweep() >= 0;
     addObject(Object.assign({ type:'arc', cx:kompassCenter.x, cy:kompassCenter.y,
-                              r:kompassRadius, a0:kompassA0, a1:kompassA0+kompassSweep, ccw },
+                              r:kompassRadius, a0:kompassA0, a1:kompassA0+kompassEffSweep(), ccw },
                             drawStyle()));
     toast('Arc R' + kompassRadius.toFixed(1) + ' \u00b7 ' +
-          Math.round(Math.abs(kompassSweep)*180/Math.PI) + '\u00b0');
+          Math.round(Math.abs(kompassEffSweep())*180/Math.PI) + '\u00b0');
   }
   // Self-contained on purpose: this is called from four different places
   // (a mouse click in onDown, a double-tap in onDown, the Enter key, and the
@@ -4025,6 +4679,15 @@ function hitTest(o, w, tol) {
     case 'text':
       return w.x >= o.x-tol && w.x <= o.x + o.text.length*o.size*0.6 + tol
           && w.y >= o.y-tol && w.y <= o.y + o.size + tol;
+    case 'image': {
+      // Anywhere on the bitmap counts, rotation included — a photograph is a
+      // solid object to the pointer, not an outline.
+      const th = (o.rot || 0) * Math.PI/180;
+      const co = Math.cos(-th), si = Math.sin(-th);
+      const dx = w.x - o.x, dy = w.y - o.y;
+      const lx = dx*co - dy*si, ly = dx*si + dy*co;
+      return lx >= -tol && lx <= o.w + tol && ly >= -tol && ly <= o.h + tol;
+    }
     case 'dim': case 'weld':
       if (!o.p1 || !o.p2) return false;
       return distToSeg(w, o.p1, o.p2) <= tol;
@@ -4471,6 +5134,10 @@ function render() {
   updateCenterFab();
   updateSelFabs();
   updateKompassCommitFab();
+  // The box is floating UI over the canvas, exactly like the fabs, so it
+  // reconciles here too. That covers every path that changes Kompass state
+  // without a pointer move — Enter, COMMIT, Escape, a tool change.
+  if (typeof updateKompassRBox === 'function') updateKompassRBox();
 }
 
 // Committed art. Drawn straight into the frame whenever it can be, because
@@ -4659,6 +5326,7 @@ function drawObject(tctx, o, isLive) {
     case 'ellipse': drawEllipseObj(tctx, o, isLive); break;
     case 'poly':    drawPolyObj(tctx, o, isLive); break;
     case 'text':    drawTextObj(tctx, o, isLive); break;
+    case 'image':   drawImageObj(tctx, o, isLive); break;
     case 'dim':     drawDim(tctx, o, isLive); break;
     case 'weld':    drawWeld(tctx, o, isLive); break;
   }
@@ -4821,14 +5489,20 @@ function drawPath(tctx, o, isLive) {
   if (!o.beziers || !o.beziers.length) return;
   tctx.save(); applyVectorStyle(tctx, o, isLive);
   tctx.beginPath();
-  const s0 = W2S(o.beziers[0].x0, o.beziers[0].y0);
-  tctx.moveTo(s0.x, s0.y);
-  for (const b of o.beziers) {
-    const c1 = W2S(b.cx1,b.cy1), c2 = W2S(b.cx2,b.cy2), p = W2S(b.x3,b.y3);
-    tctx.bezierCurveTo(c1.x,c1.y,c2.x,c2.y,p.x,p.y);
+  // One path, every contour. A glyph or an imported shape carries its holes
+  // in `holes`, and they only cut through if they are subpaths of the SAME
+  // canvas path — filled separately they would paint over the hole instead.
+  for (const contour of [o.beziers].concat(o.holes || [])) {
+    if (!contour || !contour.length) continue;
+    const s0 = W2S(contour[0].x0, contour[0].y0);
+    tctx.moveTo(s0.x, s0.y);
+    for (const b of contour) {
+      const c1 = W2S(b.cx1,b.cy1), c2 = W2S(b.cx2,b.cy2), p = W2S(b.x3,b.y3);
+      tctx.bezierCurveTo(c1.x,c1.y,c2.x,c2.y,p.x,p.y);
+    }
+    if (o.closed) tctx.closePath();
   }
-  if (o.closed) tctx.closePath();
-  if (o.fill)   tctx.fill();
+  if (o.fill)   tctx.fill(o.evenOdd ? 'evenodd' : 'nonzero');
   if (o.stroke !== false) tctx.stroke();
   tctx.restore();
 }
@@ -5036,19 +5710,19 @@ function drawLive() {
       // is hard to aim precisely by eye or thumb.
       drawKompassRadiusRubberBand(kompassCenter, snapPt(mw.x, mw.y));
     } else if (kompassPhase === 'sweep') {
-      const full = Math.abs(kompassSweep) >= Math.PI*2 - 1e-4;
+      const full = Math.abs(kompassEffSweep()) >= Math.PI*2 - 1e-4;
       const arcObj = full
         ? { type:'arc', cx:kompassCenter.x, cy:kompassCenter.y, r:kompassRadius,
             a0:0, a1:Math.PI*2, ccw:true, full:true }
         : { type:'arc', cx:kompassCenter.x, cy:kompassCenter.y, r:kompassRadius,
-            a0:kompassA0, a1:kompassA0+kompassSweep, ccw:kompassSweep>=0 };
+            a0:kompassA0, a1:kompassA0+kompassEffSweep(), ccw:kompassEffSweep()>=0 };
       // Bright construction arc first, so the true geometry is unmistakable
       // no matter how transparent the loaded brush is; the WYSIWYG brush
       // preview goes on top of it.
       drawKompassArcGuide(arcObj);
       paintBrush(ctx, Object.assign(arcObj, ds), true);
       drawKompassSweepRig(kompassCenter, kompassRadius, kompassA0,
-                          kompassA0+kompassSweep, kompassSweep, full);
+                          kompassA0+kompassEffSweep(), kompassEffSweep(), full);
     }
   }
   if (isDrawing && anchorA && anchorB && tool !== 'draw') {
@@ -5217,8 +5891,14 @@ function drawKompassArcGuide(o) {
 // do: a short segment is hard to aim precisely by eye or thumb.
 function drawKompassRadiusRubberBand(center, cur) {
   const c = W2S(center.x, center.y);
-  const p = W2S(cur.x, cur.y);
-  const r = Math.hypot(cur.x-center.x, cur.y-center.y);
+  // With a typed radius the span is pinned to that length along the LIVE
+  // direction, so the band always shows what would actually be committed
+  // rather than where the finger happens to be.
+  const r = kompassEffRadius();
+  const dxv = cur.x - center.x, dyv = cur.y - center.y;
+  const aim = (Math.hypot(dxv, dyv) < 1e-9) ? 0 : Math.atan2(dyv, dxv);
+  const tip = { x: center.x + Math.cos(aim)*r, y: center.y + Math.sin(aim)*r };
+  const p = W2S(tip.x, tip.y);
   const OA = 'rgba(180,118,32,';
   ctx.save();
 
@@ -5238,16 +5918,25 @@ function drawKompassRadiusRubberBand(center, cur) {
     ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(far.x,far.y); ctx.stroke();
     ctx.setLineDash([]);
 
-    // The stretch/slide rubber-band itself — dotted amber, centre to cursor.
-    ctx.strokeStyle = OA+'0.9)'; ctx.lineWidth = 1.7;
-    ctx.setLineDash([2,5]);
+    // The stretch/slide rubber-band itself. A LOCKED span is drawn solid in
+    // the accent colour — the visual tell that a number is now driving the
+    // geometry and the pointer is only steering it.
+    ctx.strokeStyle = kompassRLocked ? 'rgba(64,192,216,0.95)' : OA+'0.9)';
+    ctx.lineWidth = 1.7;
+    ctx.setLineDash(kompassRLocked ? [] : [2,5]);
     ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(p.x,p.y); ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.fillStyle = OA+'0.95)';
+    // Ghost of the full circle this span would sweep — the span is a radius,
+    // and seeing the circle it implies is most of the reason to type one.
+    ctx.strokeStyle = OA+'0.20)'; ctx.lineWidth = 1; ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.arc(c.x, c.y, r*cam.zoom, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = kompassRLocked ? 'rgba(64,192,216,0.95)' : OA+'0.95)';
     ctx.beginPath(); ctx.arc(p.x,p.y,2.8,0,Math.PI*2); ctx.fill();
     ctx.font = '11px "Fira Code", monospace';
-    ctx.fillText('R' + r.toFixed(1), p.x+9, p.y-7);
+    ctx.fillText('R' + r.toFixed(1) + (kompassRLocked ? ' \u25c6' : ''), p.x+9, p.y-7);
   }
   ctx.restore();
 }
@@ -5516,6 +6205,10 @@ function objBounds(o) {
   const hit=(x,y)=>{if(x<minX)minX=x;if(y<minY)minY=y;if(x>maxX)maxX=x;if(y>maxY)maxY=y;any=true;};
   if (o.pts) for (const p of o.pts) hit(p.x,p.y);
   if (o.beziers) for (const b of o.beziers) { hit(b.x0,b.y0); hit(b.x3,b.y3); }
+  // Holes usually sit inside the outer contour, but an even-odd path can hold
+  // several separate shapes, so they count towards the box either way.
+  if (o.holes) for (const c of o.holes) for (const b of c) { hit(b.x0,b.y0); hit(b.x3,b.y3); }
+  if (o.type==='image')   { hit(o.x,o.y); hit(o.x+o.w,o.y+o.h); }
   if (o.type==='arc')     { hit(o.cx-o.r,o.cy-o.r); hit(o.cx+o.r,o.cy+o.r); }
   if (o.type==='ellipse') { hit(o.cx-o.rx,o.cy-o.ry); hit(o.cx+o.rx,o.cy+o.ry); }
   if (o.type==='rect')    { hit(o.x,o.y); hit(o.x+o.w,o.y+o.h); }
@@ -5609,7 +6302,10 @@ function serializeDoc() {
   };
 }
 
-function deserializeDoc(text) {
+// fileName is threaded through because it is the title the user chose when
+// saving. It was being dropped in onKVSFile, which is why an imported sheet
+// could only ever be named from whatever was stored inside the file.
+function deserializeDoc(text, fileName) {
   let d;
   try { d = (typeof text === 'string') ? JSON.parse(text) : text; }
   catch (e) { return false; }
@@ -5636,7 +6332,7 @@ function deserializeDoc(text) {
     for (const s of d.sheets) {
       SHEETS.push({
         id: sheetSeq,
-        name: s.name || ('Sheet ' + sheetSeq),
+        name: uniqueSheetName(s.name || ('Sheet ' + sheetSeq)),
         paper: PAPERS[s.paper] ? s.paper : 'a4',
         orient: s.orient === 'l' ? 'l' : 'p',
         mem: normaliseMem(s),
@@ -5661,9 +6357,13 @@ function deserializeDoc(text) {
   // ── Single sheet, KAD-style .kvs ── opens into a NEW tab
   ensureSheets(); commitSpace();
   const paper = matchPaper(d.page);
+  // The filename wins over the name stored in the file. Every .kvs the
+  // drafting build writes carries sheetName "Sheet 1", so trusting the stored
+  // name meant every imported file arrived with the same label.
+  const importName = nameFromFile(fileName) || d.sheetName || ('Sheet ' + nextSheetNumber());
   SHEETS.splice(sheetIdx + 1, 0, {
     id: sheetSeq,
-    name: d.sheetName || ('Sheet ' + sheetSeq),
+    name: uniqueSheetName(importName),
     paper: paper.key, orient: paper.orient,
     mem: normaliseMem(d), cam: null, hist: blankHist(),
     ref: paperTrim({ paper:paper.key, orient:paper.orient }), artK: 1,
@@ -5688,6 +6388,12 @@ function normaliseMem(src) {
     // implied, and the compass flag its brush.
     for (const o of m.objects) {
       if (o.brush) continue;
+      // A path with holes must keep going through drawPath, which is the only
+      // renderer that treats its contours as one path. Giving it a brush would
+      // route it to paintBrush, which paints a single centreline — and the
+      // counter of every imported O would fill in solid on reload but not
+      // before it, which is the worst kind of bug to chase.
+      if (o.type === 'path' && o.holes && o.holes.length) continue;
       // 'kompass' is gone; fold any legacy-flagged arc into Technical rather
       // than a brush name that no longer resolves to anything.
       if (o.kompass) { o.brush = 'technical'; delete o.kompass; }
@@ -5759,28 +6465,166 @@ function matchPaper(page) {
 function saveKVS() {
   const name = (mode === 'kreate' ? 'kreate' : (activeSheet() ? activeSheet().name : 'kanvas'))
     .replace(/[^a-z0-9\-_ ]/gi,'').trim().replace(/\s+/g,'-').toLowerCase() || 'kanvas';
-  download(JSON.stringify(serializeDoc(), null, 2), name + '.kvs', 'application/octet-stream');
-  toast('Saved ' + name + '.kvs');
+  download(JSON.stringify(serializeDoc(), null, 2), name + '.kvs', 'application/octet-stream')
+    .then(n => { if (n) toast('Saved ' + n); });
 }
 function openKVS() { document.getElementById('kvs-file').click(); }
 function onKVSFile(e) {
   const f = e.target.files && e.target.files[0];
   if (!f) return;
+  // A PDF is not JSON and reading it as text would produce mojibake and a
+  // useless "not a readable .kvs". Route on what the file actually is.
+  if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') {
+    e.target.value = '';
+    pdfBeginImport(f);
+    return;
+  }
   const r = new FileReader();
   r.onload = () => {
-    if (!deserializeDoc(r.result)) toast('Not a readable .kvs');
+    if (!deserializeDoc(r.result, f.name)) toast('Not a readable .kvs');
     e.target.value = '';
   };
   r.readAsText(f);
 }
-function download(content, filename, mime) {
-  const b = new Blob([content], { type: mime || 'text/plain' });
-  const u = URL.createObjectURL(b);
+// ══════════════════════════════════════════════════════════════════════════════
+//  SAVE AS — every write asks for a name
+//  ────────────────────────────────────────────────────────────────────────────
+//  Every export in this program used to fire the instant you clicked it, into
+//  whatever the code happened to hardcode: drawing.kad, drawing.dxf,
+//  drawing.svg. Save the same drawing twice and you got drawing(1).dxf in the
+//  downloads folder with nothing to tell the two apart. There was no way to
+//  name anything, ever.
+//
+//  Every save is now a Save As. There is ONE choke point — saveAsText/saveAsBlob
+//  — so a format added later inherits the behaviour instead of having to
+//  remember it.
+//
+//  Two routes, best-first:
+//    1. showSaveFilePicker() — the real OS dialog, so the FOLDER is chosen too
+//       and an overwrite prompt comes from the system. Must be called straight
+//       out of the click that triggered it, so nothing is awaited before it.
+//    2. An in-app naming dialog, then the anchor download, for browsers without
+//       the File System Access API (Safari, Firefox, most mobile).
+// ══════════════════════════════════════════════════════════════════════════════
+
+const SAVE_MIME_EXT = {
+  'application/json':'.json', 'image/svg+xml':'.svg', 'image/png':'.png',
+  'text/plain':'.txt', 'application/pdf':'.pdf',
+};
+
+function saveSplitName(name) {
+  const i = name.lastIndexOf('.');
+  return (i > 0) ? { base: name.slice(0, i), ext: name.slice(i) } : { base: name, ext: '' };
+}
+
+// Strip what filesystems refuse, without silently mangling a name into
+// something the user did not type.
+function saveSanitize(base) {
+  return String(base || '').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80);
+}
+
+function saveHasNativePicker() {
+  return typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function';
+}
+
+// ── In-app naming dialog ──
+let _saveAskResolve = null;
+
+function saveAskName(defaultName) {
+  return new Promise(resolve => {
+    const ov = document.getElementById('saveas-overlay');
+    const inp = document.getElementById('saveas-name');
+    const extEl = document.getElementById('saveas-ext');
+    if (!ov || !inp) { resolve(defaultName); return; }
+    const { base, ext } = saveSplitName(defaultName);
+    inp.value = base;
+    if (extEl) extEl.textContent = ext;
+    ov.dataset.ext = ext;
+    ov.classList.add('open');
+    _saveAskResolve = resolve;
+    // Select the stem only, so typing replaces the name but keeps the format.
+    setTimeout(() => { inp.focus(); inp.select(); }, 30);
+  });
+}
+
+function saveAsConfirm() {
+  const ov = document.getElementById('saveas-overlay');
+  const inp = document.getElementById('saveas-name');
+  if (!ov || !inp) return;
+  const base = saveSanitize(inp.value);
+  if (!base) { inp.focus(); return; }          // never write an unnamed file
+  const name = base + (ov.dataset.ext || '');
+  ov.classList.remove('open');
+  const r = _saveAskResolve; _saveAskResolve = null;
+  if (r) r(name);
+}
+
+function saveAsCancel() {
+  const ov = document.getElementById('saveas-overlay');
+  if (ov) ov.classList.remove('open');
+  const r = _saveAskResolve; _saveAskResolve = null;
+  if (r) r(null);                              // null means "the user backed out"
+}
+
+function saveAsKeydown(e) {
+  e.stopPropagation();
+  if (e.key === 'Enter') { e.preventDefault(); saveAsConfirm(); }
+  else if (e.key === 'Escape') { e.preventDefault(); saveAsCancel(); }
+}
+
+// ── The actual write ──
+function saveAnchorDownload(blob, name) {
+  const u = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = u; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
+  a.href = u; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(u), 1500);
+}
+
+async function saveAsBlob(blob, defaultName, mime) {
+  const { ext } = saveSplitName(defaultName);
+  // Native picker first, and NOT awaited behind anything — the API requires
+  // the call to happen inside the gesture that started it.
+  if (saveHasNativePicker()) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: defaultName,
+        types: ext ? [{ description: ext.slice(1).toUpperCase() + ' file',
+                        accept: { [mime || 'application/octet-stream']: [ext] } }] : undefined,
+      });
+      const w = await handle.createWritable();
+      await w.write(blob);
+      await w.close();
+      const written = handle.name || defaultName;
+      lastSaveBase = saveSplitName(written).base;
+      return written;
+    } catch (err) {
+      // AbortError is the user cancelling, which is a real answer, not a fault.
+      if (err && err.name === 'AbortError') return null;
+      // Anything else (no permission, file:// restrictions) falls through to
+      // the in-app route rather than failing the save.
+    }
+  }
+  const name = await saveAskName(defaultName);
+  if (!name) return null;
+  saveAnchorDownload(blob, name);
+  lastSaveBase = saveSplitName(name).base;
+  return name;
+}
+
+async function saveAsText(content, defaultName, mime) {
+  return saveAsBlob(new Blob([content], { type: mime || 'text/plain' }), defaultName, mime);
+}
+
+// The stem of the last successful save, so exporting an SVG after saving a
+// .kvs suggests the same document name instead of the default again.
+let lastSaveBase = '';
+function docBaseName() { return lastSaveBase || (typeof docName === 'function' ? docName() : 'drawing'); }
+
+// Kept as the name every export already calls, but it is a Save As now. The
+// filename passed in is a SUGGESTION, not a decision.
+function download(content, filename, mime) {
+  return saveAsText(content, filename, mime);
 }
 
 function newDocument() {
@@ -5958,12 +6802,29 @@ function emitLayer(out, items, P, esc) {
       }
       case 'path': {
         if (!o.beziers || !o.beziers.length) break;
-        let d = `M ${P(o.beziers[0].x0)} ${P(-o.beziers[0].y0)}`;
-        for (const b of o.beziers)
-          d += ` C ${P(b.cx1)} ${P(-b.cy1)} ${P(b.cx2)} ${P(-b.cy2)} ${P(b.x3)} ${P(-b.y3)}`;
-        if (o.closed) d += ' Z';
+        // Every contour into one `d`. Separate <path> elements would fill the
+        // holes in rather than cut them out, exactly as separate canvas paths
+        // would — see drawPath.
+        let d = '';
+        for (const contour of [o.beziers].concat(o.holes || [])) {
+          if (!contour || !contour.length) continue;
+          d += (d ? ' ' : '') + `M ${P(contour[0].x0)} ${P(-contour[0].y0)}`;
+          for (const b of contour)
+            d += ` C ${P(b.cx1)} ${P(-b.cy1)} ${P(b.cx2)} ${P(-b.cy2)} ${P(b.x3)} ${P(-b.y3)}`;
+          if (o.closed) d += ' Z';
+        }
+        const rule = o.evenOdd ? ' fill-rule="evenodd"' : '';
         out.push(`    <path d="${d}" fill="${fill}" stroke="${strk}"` +
-                 ` stroke-width="${lw}" opacity="${op}"${dash} stroke-linecap="round"/>`);
+                 ` stroke-width="${lw}" opacity="${op}"${dash}${rule} stroke-linecap="round"/>`);
+        break;
+      }
+      case 'image': {
+        // Rotation is about the bottom-left corner, so the SVG transform is
+        // stated about that same point rather than the element's own origin.
+        const yTop = -(o.y + o.h);
+        const rot = o.rot ? ` transform="rotate(${-o.rot} ${P(o.x)} ${P(-o.y)})"` : '';
+        out.push(`    <image x="${P(o.x)}" y="${P(yTop)}" width="${P(o.w)}" height="${P(o.h)}"` +
+                 ` opacity="${op}"${rot} preserveAspectRatio="none" href="${o.src}"/>`);
         break;
       }
       case 'stroke': {
@@ -6104,12 +6965,17 @@ function exportSVG() {
       'Everything else exports as clean vectors.\n\n' +
       'Export PNG instead for a single flat image, or .kvs to keep everything ' +
       'fully editable.\n\nContinue with SVG?')) return;
-  const name = docName();
-  download(buildSVG(), name + '.svg', 'image/svg+xml');
   const arcs = visibleObjects().filter(o => o.type === 'arc').length;
-  toast('Exported ' + name + '.svg'
-      + (arcs ? ' \u00b7 ' + arcs + ' true arc' + (arcs>1?'s':'') : '')
-      + (n ? ' \u00b7 ' + n + ' raster' : ''));
+  // `n` here is the raster-stroke count computed above; `saved` is the filename
+  // the save actually produced. Reporting the suggestion instead of the result
+  // would announce a name the user may have just changed.
+  download(buildSVG(), docBaseName() + '.svg', 'image/svg+xml')
+    .then(saved => {
+      if (!saved) return;
+      toast('Exported ' + saved
+          + (arcs ? ' \u00b7 ' + arcs + ' true arc' + (arcs>1?'s':'') : '')
+          + (n ? ' \u00b7 ' + n + ' raster' : ''));
+    });
 }
 
 // PNG: everything exactly as it looks, at whatever resolution is asked for.
@@ -6153,23 +7019,23 @@ function exportPNG(scale) {
   }
   scheduleDraw();
 
-  const name = docName() + '.png';
+  // Raster export is the one path that starts as a blob rather than text, so
+  // it routes through saveAsBlob — same dialog, same cancel behaviour, no
+  // second copy of the naming logic.
+  const name = docBaseName() + '.png';
   if (cv.toBlob) {
     cv.toBlob(bl => {
       if (!bl) { toast('Could not encode the image'); return; }
-      const u = URL.createObjectURL(bl);
-      const a = document.createElement('a');
-      a.href = u; a.download = name;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(u), 1500);
-      toast('Exported ' + name + ' \u00b7 ' + cv.width + '\u00d7' + cv.height);
+      saveAsBlob(bl, name, 'image/png')
+        .then(n => { if (n) toast('Exported ' + n + ' \u00b7 ' + cv.width + '\u00d7' + cv.height); });
     }, 'image/png');
   } else {
     try {
-      const a = document.createElement('a');
-      a.href = cv.toDataURL('image/png'); a.download = name;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast('Exported ' + name);
+      const url = cv.toDataURL('image/png');
+      fetch(url).then(r => r.blob())
+        .then(bl => saveAsBlob(bl, name, 'image/png'))
+        .then(n => { if (n) toast('Exported ' + n); })
+        .catch(() => toast('Could not export the image'));
     } catch (err) { toast('Could not export the image'); }
   }
 }
@@ -6187,6 +7053,1755 @@ function printPDF() {
     '</style></head><body>' + svg + '</body></html>');
   w.document.close();
   setTimeout(() => { w.focus(); w.print(); }, 350);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PDF — WRITER
+
+   A PDF is written here directly, by hand, rather than through a library.
+   That is not stubbornness: it is the only way to guarantee the claim this
+   feature makes. A library that rasterises the page produces a PDF that
+   *looks* right and contains one enormous bitmap. Everything below emits
+   `m`/`l`/`c`/`re` path operators, so an arc leaves as four cubic segments and
+   a rectangle leaves as a rectangle — the same guarantee the SVG export makes,
+   in the format people actually send to printers.
+
+   What survives as true vector:
+     · every arc, line, rect, ellipse, polygon and bezier path
+     · every brush stroke, as its filled silhouette (the same geometry the
+       screen draws — see strokeGeometry)
+     · text, as REAL PDF text: selectable, searchable, copyable
+     · layers, as optional content groups — Acrobat and Illustrator show them
+       in the layers panel and let you switch them off
+     · erasures, as a luminosity soft mask, which is the PDF spelling of the
+       SVG mask the .svg export already uses
+
+   What cannot be:
+     · airbrush spray, which has no path form. Embedded as an image XObject
+       with an alpha SMask, exactly as the SVG export embeds a PNG tile.
+     · imported raster images, for the same reason.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const PT_PER_MM = 72 / 25.4;
+const PT_PER_PX = 72 / 96;
+
+// Points per stored unit for a given sheet. Lengths in this program are
+// millimetres for mm/in papers and raw pixels for the screen presets, so the
+// factor is a property of the sheet, not a constant.
+function pdfUnitScale(sheet) {
+  const p = PAPERS[sheet && sheet.paper ? sheet.paper : 'a4'] || PAPERS.a4;
+  return p.unit === 'px' ? PT_PER_PX : PT_PER_MM;
+}
+
+/* ── Byte plumbing ────────────────────────────────────────────────────────────
+   A PDF is a byte file with ASCII syntax and binary streams mixed in, so the
+   whole thing is assembled as byte arrays. Encoding the syntax as Latin-1
+   keeps offsets honest: xref entries are byte offsets, and one multi-byte
+   character anywhere would put every offset after it out by one.
+   ─────────────────────────────────────────────────────────────────────────── */
+function pdfBytes(str) {
+  const u = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) u[i] = str.charCodeAt(i) & 0xff;
+  return u;
+}
+// Fixed 4 decimals, and never "1e+21". Exponent notation is not legal PDF
+// number syntax and is the classic way a hand-written writer produces a file
+// that opens everywhere except the one printer that matters. toFixed switches
+// to exponent form at 1e21, so the value is clamped first: a runaway
+// coordinate then puts ONE object in the wrong place, instead of making the
+// whole file unopenable.
+const PDF_MAX = 1e9;
+function pdfN(v) {
+  if (!isFinite(v)) return '0';
+  const c = v > PDF_MAX ? PDF_MAX : v < -PDF_MAX ? -PDF_MAX : v;
+  const r = Math.round(c * 10000) / 10000;
+  if (Object.is(r, -0)) return '0';
+  const s = r.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  return s === '' || s === '-' ? '0' : s;
+}
+
+// Deflate through the platform. CompressionStream('deflate') emits zlib-wrapped
+// deflate, which is exactly what /FlateDecode expects. Where it is missing the
+// stream is written raw — larger, equally valid, and never a failed export.
+async function pdfDeflate(u8) {
+  if (typeof CompressionStream !== 'function') return null;
+  try {
+    const cs = new CompressionStream('deflate');
+    const w = cs.writable.getWriter();
+    w.write(u8); w.close();
+    const buf = await new Response(cs.readable).arrayBuffer();
+    return new Uint8Array(buf);
+  } catch (err) { return null; }
+}
+
+function pdfDoc() {
+  const objs = [null];                       // 1-based; objs[0] is unused
+  return {
+    alloc() { objs.push({ dict:'<<>>', data:null }); return objs.length - 1; },
+    set(id, dict, data) { objs[id] = { dict, data: data || null }; },
+    add(dict, data) { const id = this.alloc(); this.set(id, dict, data); return id; },
+    objs,
+  };
+}
+
+// Serialise. Streams are deflated first, which is why this is async — the
+// alternative is a 40 MB file for a page with one airbrush pass on it.
+async function pdfSerialize(doc, catalogId) {
+  const parts = [];
+  const offsets = new Array(doc.objs.length).fill(0);
+  let len = 0;
+  const put = u8 => { parts.push(u8); len += u8.length; };
+  const putS = s => put(pdfBytes(s));
+
+  putS('%PDF-1.7\n');
+  put(new Uint8Array([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));   // binary marker
+
+  for (let id = 1; id < doc.objs.length; id++) {
+    const o = doc.objs[id];
+    offsets[id] = len;
+    if (!o) { putS(id + ' 0 obj\nnull\nendobj\n'); continue; }
+    if (o.data) {
+      let body = o.data, filter = '';
+      const packed = await pdfDeflate(body);
+      // Only keep the compressed form if it actually won. Tiny streams get
+      // bigger through deflate, and a bigger "compressed" stream is a loss
+      // twice over.
+      if (packed && packed.length < body.length) { body = packed; filter = '/Filter/FlateDecode'; }
+      putS(id + ' 0 obj\n' + o.dict.replace(/>>$/, '') + filter +
+           '/Length ' + body.length + '>>\nstream\n');
+      put(body);
+      putS('\nendstream\nendobj\n');
+    } else {
+      putS(id + ' 0 obj\n' + o.dict + '\nendobj\n');
+    }
+  }
+
+  const xref = len;
+  let x = 'xref\n0 ' + doc.objs.length + '\n0000000000 65535 f \n';
+  for (let id = 1; id < doc.objs.length; id++)
+    x += String(offsets[id]).padStart(10, '0') + ' 00000 n \n';
+  x += 'trailer\n<</Size ' + doc.objs.length + '/Root ' + catalogId + ' 0 R>>\n' +
+       'startxref\n' + xref + '\n%%EOF\n';
+  putS(x);
+
+  const out = new Uint8Array(len);
+  let at = 0;
+  for (const p of parts) { out.set(p, at); at += p.length; }
+  return out;
+}
+
+/* ── Colour ─────────────────────────────────────────────────────────────── */
+function pdfColor(css) {
+  const s = String(css || '#1a1028').trim();
+  let m = /^#([0-9a-f]{3})$/i.exec(s);
+  if (m) return [parseInt(m[1][0]+m[1][0],16)/255, parseInt(m[1][1]+m[1][1],16)/255,
+                 parseInt(m[1][2]+m[1][2],16)/255];
+  m = /^#([0-9a-f]{6})$/i.exec(s);
+  if (m) return [parseInt(m[1].slice(0,2),16)/255, parseInt(m[1].slice(2,4),16)/255,
+                 parseInt(m[1].slice(4,6),16)/255];
+  m = /^rgba?\(([^)]+)\)$/i.exec(s);
+  if (m) { const p = m[1].split(',').map(v => parseFloat(v));
+           return [(p[0]||0)/255, (p[1]||0)/255, (p[2]||0)/255]; }
+  return [0.10, 0.06, 0.16];
+}
+
+/* ── Curves ───────────────────────────────────────────────────────────────
+   PDF has no arc operator, so a true arc becomes cubic segments. The split is
+   at 45 degrees rather than the usual 90. The radial error of the
+   four-thirds-tangent approximation goes as the sixth power of the segment
+   angle, so halving it is 64 times more accurate: 2.7e-4 of the radius at 90
+   degrees becomes about 4e-6 at 45. On a 500 mm radius that is the difference
+   between 0.14 mm of error and 0.002 mm — the first is visible on a plotter,
+   the second is below what any machine can hold. The cost is four extra
+   segments on a full circle, which is nothing.
+   ─────────────────────────────────────────────────────────────────────────── */
+const ARC_SEG = Math.PI / 4;
+function arcToBeziers(o) {
+  const sweep = (o.full || arcSweep(o) >= Math.PI*2 - 1e-9) ? Math.PI*2 : arcSweep(o);
+  const dir = o.ccw ? 1 : -1;
+  const n = Math.max(1, Math.ceil(sweep / ARC_SEG - 1e-9));
+  const step = sweep / n;
+  const k = (4/3) * Math.tan(step/4) * dir;
+  const out = [];
+  let a = o.a0;
+  for (let i = 0; i < n; i++) {
+    const b = a + dir*step;
+    const x0 = o.cx + o.r*Math.cos(a), y0 = o.cy + o.r*Math.sin(a);
+    const x3 = o.cx + o.r*Math.cos(b), y3 = o.cy + o.r*Math.sin(b);
+    out.push({
+      x0, y0,
+      cx1: x0 - k*o.r*Math.sin(a),  cy1: y0 + k*o.r*Math.cos(a),
+      cx2: x3 + k*o.r*Math.sin(b),  cy2: y3 - k*o.r*Math.cos(b),
+      x3, y3,
+    });
+    a = b;
+  }
+  return out;
+}
+const KAPPA = 0.5522847498307936;
+function ellipseToBeziers(cx, cy, rx, ry) {
+  const kx = rx*KAPPA, ky = ry*KAPPA;
+  return [
+    { x0:cx+rx, y0:cy,    cx1:cx+rx, cy1:cy+ky, cx2:cx+kx, cy2:cy+ry, x3:cx,    y3:cy+ry },
+    { x0:cx,    y0:cy+ry, cx1:cx-kx, cy1:cy+ry, cx2:cx-rx, cy2:cy+ky, x3:cx-rx, y3:cy    },
+    { x0:cx-rx, y0:cy,    cx1:cx-rx, cy1:cy-ky, cx2:cx-kx, cy2:cy-ry, x3:cx,    y3:cy-ry },
+    { x0:cx,    y0:cy-ry, cx1:cx+kx, cy1:cy-ry, cx2:cx+rx, cy2:cy-ky, x3:cx+rx, y3:cy    },
+  ];
+}
+
+/* ── Base-14 fonts ────────────────────────────────────────────────────────
+   Text leaves as text. The alternative — converting every glyph to outlines —
+   would guarantee the shapes but throw away the ability to select, search or
+   correct a word in the exported file, which is most of what people open a
+   PDF for. The trade is a font substitution: KANVAS composes in Syne, and the
+   PDF carries the nearest of the fourteen fonts every reader is required to
+   have, so no font data has to be embedded and the file opens anywhere.
+   ─────────────────────────────────────────────────────────────────────────── */
+function pdfFontFor(spec) {
+  const s = String(spec || '').toLowerCase();
+  const bold = /bold|[6-9]00/.test(s), ital = /italic|oblique/.test(s);
+  let fam = 'Helvetica';
+  if (/mono|courier|fira code|consolas/.test(s)) fam = 'Courier';
+  else if (/(^|[^-])serif|times|georgia|garamond/.test(s) && !/sans-?serif/.test(s)) fam = 'Times';
+  if (fam === 'Times') {
+    if (bold && ital) return { base:'Times-BoldItalic', css:'bold italic 100px "Times New Roman",serif' };
+    if (bold)  return { base:'Times-Bold',   css:'bold 100px "Times New Roman",serif' };
+    if (ital)  return { base:'Times-Italic', css:'italic 100px "Times New Roman",serif' };
+    return { base:'Times-Roman', css:'100px "Times New Roman",serif' };
+  }
+  const suffix = bold && ital ? '-BoldOblique' : bold ? '-Bold' : ital ? '-Oblique' : '';
+  return { base: fam + suffix,
+           css: (bold?'bold ':'') + (ital?'italic ':'') + '100px ' +
+                (fam === 'Courier' ? '"Courier New",monospace' : 'Helvetica,Arial,sans-serif') };
+}
+
+// Measured against the font the PDF will actually use, not the one on screen.
+// Alignment computed from Syne metrics would land centred text off-centre in
+// the file, which is the sort of error nobody notices until it is printed.
+let _pdfMeasureCtx = null;
+function pdfTextWidth(str, fontSpec, size) {
+  if (!_pdfMeasureCtx) {
+    const c = document.createElement('canvas');
+    _pdfMeasureCtx = c.getContext('2d');
+  }
+  if (!_pdfMeasureCtx) return str.length * size * 0.5;
+  _pdfMeasureCtx.font = pdfFontFor(fontSpec).css;
+  return (_pdfMeasureCtx.measureText(str).width / 100) * size;
+}
+
+// WinAnsiEncoding. Anything outside it becomes a question mark rather than a
+// mojibake byte — a visible gap is easier to fix than a silently wrong glyph.
+const PDF_WINANSI = {
+  0x20AC:128, 0x201A:130, 0x0192:131, 0x201E:132, 0x2026:133, 0x2020:134, 0x2021:135,
+  0x02C6:136, 0x2030:137, 0x0160:138, 0x2039:139, 0x0152:140, 0x017D:142, 0x2018:145,
+  0x2019:146, 0x201C:147, 0x201D:148, 0x2022:149, 0x2013:150, 0x2014:151, 0x02DC:152,
+  0x2122:153, 0x0161:154, 0x203A:155, 0x0153:156, 0x017E:158, 0x0178:159,
+};
+function pdfString(str) {
+  let out = '';
+  for (const ch of String(str)) {
+    const c = ch.codePointAt(0);
+    let b = c;
+    if (c > 255) b = PDF_WINANSI[c] != null ? PDF_WINANSI[c] : 63;
+    if (b === 40 || b === 41 || b === 92) out += '\\' + String.fromCharCode(b);
+    // Everything outside printable ASCII goes out as an octal escape. A raw
+    // high byte is legal in a PDF literal, but escaping keeps the whole file
+    // ASCII-safe through any tool that might touch it in transit.
+    else if (b < 32 || b > 126) out += '\\' + ('000' + b.toString(8)).slice(-3);
+    else out += String.fromCharCode(b);
+  }
+  return '(' + out + ')';
+}
+
+/* ── Page state ─────────────────────────────────────────────────────────────
+   One of these per page. It owns the content stream being built and the
+   resource dictionaries the page will need, so a font or an alpha state is
+   registered at the moment it is first used rather than predicted up front.
+   ─────────────────────────────────────────────────────────────────────────── */
+function pdfPageState(doc, k) {
+  return {
+    doc, k,                       // k: stored units -> points
+    out: [],
+    fonts: new Map(),             // base name -> resource name
+    gs: new Map(),                // signature -> resource name
+    xobj: new Map(),              // resource name -> object id
+    ocg: new Map(),               // layer name -> object id
+    w(s) { this.out.push(s); },
+    X(v) { return pdfN(v * this.k); },
+    fontRes(spec) {
+      const f = pdfFontFor(spec);
+      if (!this.fonts.has(f.base)) this.fonts.set(f.base, 'F' + this.fonts.size);
+      return { res: this.fonts.get(f.base), base: f.base };
+    },
+    // Alpha and blend live in an ExtGState, so identical settings share one
+    // dictionary instead of one per object.
+    gsRes(alpha, blend) {
+      const a = Math.max(0, Math.min(1, alpha == null ? 1 : alpha));
+      const bm = blend === 'multiply' ? 'Multiply' : 'Normal';
+      const sig = a.toFixed(3) + '|' + bm;
+      if (!this.gs.has(sig)) {
+        const id = this.doc.add('<</Type/ExtGState/ca ' + pdfN(a) + '/CA ' + pdfN(a) +
+                                '/BM/' + bm + '>>');
+        this.gs.set(sig, { res:'G' + this.gs.size, id });
+      }
+      return this.gs.get(sig);
+    },
+  };
+}
+
+// Path emitters. Each leaves a path on the stack; the caller decides paint.
+function pdfMoveLine(S, pts, closed) {
+  if (!pts || !pts.length) return false;
+  S.w(S.X(pts[0].x) + ' ' + S.X(pts[0].y) + ' m');
+  for (let i = 1; i < pts.length; i++) S.w(S.X(pts[i].x) + ' ' + S.X(pts[i].y) + ' l');
+  if (closed) S.w('h');
+  return true;
+}
+function pdfBezierPath(S, bez, closed) {
+  if (!bez || !bez.length) return false;
+  S.w(S.X(bez[0].x0) + ' ' + S.X(bez[0].y0) + ' m');
+  for (const b of bez)
+    S.w(S.X(b.cx1) + ' ' + S.X(b.cy1) + ' ' + S.X(b.cx2) + ' ' + S.X(b.cy2) + ' ' +
+        S.X(b.x3) + ' ' + S.X(b.y3) + ' c');
+  if (closed) S.w('h');
+  return true;
+}
+function pdfCircle(S, cx, cy, r) { return pdfBezierPath(S, ellipseToBeziers(cx, cy, r, r), true); }
+
+// fill/stroke/both, matching what the object actually asks for. The starred
+// operators are the even-odd rule, which is how an imported path states that
+// its overlapping contours are holes rather than solid.
+function pdfPaint(S, o, forceFill) {
+  const doFill   = forceFill || !!o.fill;
+  const doStroke = !forceFill && o.stroke !== false;
+  const eo = o.evenOdd ? '*' : '';
+  S.w(doFill && doStroke ? 'B' + eo : doFill ? 'f' + eo : doStroke ? 'S' : 'n');
+}
+
+function pdfStyle(S, o, opts) {
+  const c = pdfColor(o.color || '#1a1028');
+  const g = S.gsRes(o.opacity != null ? o.opacity : 1, o.blend);
+  S.w('/' + g.res + ' gs');
+  S.w(pdfN(c[0]) + ' ' + pdfN(c[1]) + ' ' + pdfN(c[2]) + ' rg');
+  S.w(pdfN(c[0]) + ' ' + pdfN(c[1]) + ' ' + pdfN(c[2]) + ' RG');
+  const lw = (opts && opts.lw != null) ? opts.lw : (o.width || o.size || 0.5);
+  S.w(pdfN(Math.max(lw * S.k, 0.05)) + ' w');
+  S.w('1 J 1 j');                                   // round cap and join
+  S.w(o.dashed ? '[' + pdfN(2*S.k) + ' ' + pdfN(1.4*S.k) + '] 0 d' : '[] 0 d');
+}
+
+/* ── One object ─────────────────────────────────────────────────────────────
+   Deliberately parallel to emitLayer in the SVG export. The two exports read
+   the same object list through the same helpers, so a drawing that survives
+   one survives the other, and a new primitive is two small additions rather
+   than a rewrite of either.
+   ─────────────────────────────────────────────────────────────────────────── */
+function pdfEmitObject(S, o) {
+  switch (o.type) {
+    case 'arc': {
+      S.w('q'); pdfStyle(S, o);
+      pdfBezierPath(S, arcToBeziers(o), !!o.full || !!o.fill);
+      pdfPaint(S, o); S.w('Q');
+      break;
+    }
+    case 'line': {
+      S.w('q'); pdfStyle(S, o);
+      S.w(S.X(o.x1) + ' ' + S.X(o.y1) + ' m ' + S.X(o.x2) + ' ' + S.X(o.y2) + ' l');
+      S.w('S'); S.w('Q');
+      break;
+    }
+    case 'rect': {
+      S.w('q'); pdfStyle(S, o);
+      S.w(S.X(o.x) + ' ' + S.X(o.y) + ' ' + S.X(o.w) + ' ' + S.X(o.h) + ' re');
+      pdfPaint(S, o); S.w('Q');
+      break;
+    }
+    case 'ellipse': {
+      S.w('q'); pdfStyle(S, o);
+      pdfBezierPath(S, ellipseToBeziers(o.cx, o.cy, o.rx, o.ry), true);
+      pdfPaint(S, o); S.w('Q');
+      break;
+    }
+    case 'poly': {
+      if (!o.pts || o.pts.length < 2) break;
+      S.w('q'); pdfStyle(S, o);
+      pdfMoveLine(S, o.pts, o.closed);
+      pdfPaint(S, o); S.w('Q');
+      break;
+    }
+    case 'path': {
+      if (!o.beziers || !o.beziers.length) break;
+      S.w('q'); pdfStyle(S, o);
+      // All contours, then one paint operator. PDF fills the whole current
+      // path at once, so the holes cut out; painting them one at a time would
+      // fill each in turn and leave a solid blob.
+      for (const contour of [o.beziers].concat(o.holes || []))
+        pdfBezierPath(S, contour, o.closed);
+      pdfPaint(S, o); S.w('Q');
+      break;
+    }
+    case 'stroke': {
+      // Spray was written as an image before the vectors; nothing to do here.
+      if (BRUSHES[o.brush] && BRUSHES[o.brush].fam === 'spray') break;
+      // A pressure stroke is a filled silhouette, not a constant-width line.
+      // Stroking a centreline would throw the taper away — which is the whole
+      // reason the outline is computed once, in strokeGeometry, and shared.
+      const g = strokeGeometry(o);
+      if (!g) break;
+      S.w('q'); pdfStyle(S, o);
+      if (g.dot) { pdfCircle(S, g.dot.x, g.dot.y, g.dot.r); S.w('f'); S.w('Q'); break; }
+      S.w(S.X(g.left[0].x) + ' ' + S.X(g.left[0].y) + ' m');
+      for (let i = 1; i < g.left.length; i++) S.w(S.X(g.left[i].x) + ' ' + S.X(g.left[i].y) + ' l');
+      for (let i = g.right.length - 1; i >= 0; i--) S.w(S.X(g.right[i].x) + ' ' + S.X(g.right[i].y) + ' l');
+      S.w('h f');
+      for (const cap of [g.capA, g.capB]) { pdfCircle(S, cap.x, cap.y, cap.r); S.w('f'); }
+      S.w('Q');
+      break;
+    }
+    case 'text': {
+      if (!o.text) break;
+      const f = S.fontRes(o.font);
+      const c = pdfColor(o.color || '#1a1028');
+      const g = S.gsRes(o.opacity != null ? o.opacity : 1, null);
+      const wpt = pdfTextWidth(o.text, o.font, o.size) * S.k;
+      const dx = o.align === 'center' ? -wpt/2 : o.align === 'right' ? -wpt : 0;
+      const th = (o.rot || 0) * Math.PI / 180;
+      const co = Math.cos(th), si = Math.sin(th);
+      S.w('q');
+      S.w('/' + g.res + ' gs');
+      S.w(pdfN(c[0]) + ' ' + pdfN(c[1]) + ' ' + pdfN(c[2]) + ' rg');
+      S.w('BT');
+      S.w('/' + f.res + ' ' + pdfN(o.size * S.k) + ' Tf');
+      // The alignment shift rides inside the text matrix, so it rotates with
+      // the text instead of nudging it along the page axis.
+      S.w(pdfN(co) + ' ' + pdfN(si) + ' ' + pdfN(-si) + ' ' + pdfN(co) + ' ' +
+          pdfN(o.x*S.k + dx*co) + ' ' + pdfN(o.y*S.k + dx*si) + ' Tm');
+      S.w(pdfString(o.text) + ' Tj');
+      S.w('ET'); S.w('Q');
+      break;
+    }
+    case 'image': {
+      const res = pdfRegisterImage(S, o);
+      if (!res) break;
+      const th = (o.rot || 0) * Math.PI / 180;
+      const co = Math.cos(th), si = Math.sin(th);
+      const w = o.w * S.k, h = o.h * S.k;
+      const g = S.gsRes(o.opacity != null ? o.opacity : 1, null);
+      S.w('q'); S.w('/' + g.res + ' gs');
+      S.w(pdfN(w*co) + ' ' + pdfN(w*si) + ' ' + pdfN(-h*si) + ' ' + pdfN(h*co) + ' ' +
+          S.X(o.x) + ' ' + S.X(o.y) + ' cm');
+      S.w('/' + res + ' Do'); S.w('Q');
+      break;
+    }
+    case 'dim': {
+      const st = DIM_STYLES[o.std || dimStd] || DIM_STYLES.asme;
+      const styled = { color: st.color, width: st.lw, opacity: 1 };
+      if (o.kind === 'radial') {
+        S.w('q'); pdfStyle(S, styled);
+        S.w(S.X(o.p1.x) + ' ' + S.X(o.p1.y) + ' m ' + S.X(o.p2.x) + ' ' + S.X(o.p2.y) + ' l S');
+        S.w('Q');
+        pdfEmitObject(S, { type:'text', x:(o.p1.x+o.p2.x)/2, y:(o.p1.y+o.p2.y)/2 + 2,
+                           text:'R' + fmtLen(o.radius), size:st.text, color:st.color,
+                           align:'center' });
+      } else {
+        let nx = -(o.p2.y-o.p1.y), ny = (o.p2.x-o.p1.x);
+        const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+        const kk = o.offset || 9;
+        const a = { x:o.p1.x+nx*kk, y:o.p1.y+ny*kk }, b = { x:o.p2.x+nx*kk, y:o.p2.y+ny*kk };
+        S.w('q'); pdfStyle(S, styled);
+        S.w(S.X(a.x) + ' ' + S.X(a.y) + ' m ' + S.X(b.x) + ' ' + S.X(b.y) + ' l S');
+        S.w('Q');
+        const len = Math.hypot(o.p2.x-o.p1.x, o.p2.y-o.p1.y);
+        pdfEmitObject(S, { type:'text', x:(a.x+b.x)/2, y:(a.y+b.y)/2 + 1.5,
+                           text:fmtLen(len), size:st.text, color:st.color, align:'center' });
+      }
+      break;
+    }
+    case 'weld': {
+      if (!o.p1 || !o.p2) break;
+      const dir = (o.p2.x >= o.p1.x) ? 1 : -1;
+      S.w('q'); pdfStyle(S, { color:o.color || '#ffaa00', width:0.35, opacity:1 });
+      S.w(S.X(o.p1.x) + ' ' + S.X(o.p1.y) + ' m ' + S.X(o.p2.x) + ' ' + S.X(o.p2.y) +
+          ' l ' + S.X(o.p2.x + dir*12) + ' ' + S.X(o.p2.y) + ' l S');
+      S.w('Q');
+      const note = [o.size, o.length].filter(Boolean).join(' \u00d7 ');
+      if (note) pdfEmitObject(S, { type:'text', x:o.p2.x + dir*14, y:o.p2.y,
+                                   text:note, size:3, color:o.color || '#ffaa00' });
+      break;
+    }
+  }
+}
+
+/* ── Raster ───────────────────────────────────────────────────────────────
+   Two things reach here: airbrush spray, which has no vector form, and images
+   that came in from an imported PDF. Both are written as image XObjects with
+   a separate 8-bit /SMask, which is how PDF spells "this bitmap has an alpha
+   channel". Without the SMask the tile would arrive as an opaque rectangle
+   and paint over whatever it overlaps.
+   ─────────────────────────────────────────────────────────────────────────── */
+function pdfImageXObject(S, imageData) {
+  const n = imageData.width * imageData.height;
+  const rgb = new Uint8Array(n * 3);
+  const alpha = new Uint8Array(n);
+  const src = imageData.data;
+  let opaque = true;
+  for (let i = 0; i < n; i++) {
+    rgb[i*3] = src[i*4]; rgb[i*3+1] = src[i*4+1]; rgb[i*3+2] = src[i*4+2];
+    alpha[i] = src[i*4+3];
+    if (src[i*4+3] !== 255) opaque = false;
+  }
+  let smaskRef = '';
+  if (!opaque) {
+    const sid = S.doc.add('<</Type/XObject/Subtype/Image/Width ' + imageData.width +
+      '/Height ' + imageData.height + '/ColorSpace/DeviceGray/BitsPerComponent 8>>', alpha);
+    smaskRef = '/SMask ' + sid + ' 0 R';
+  }
+  const id = S.doc.add('<</Type/XObject/Subtype/Image/Width ' + imageData.width +
+    '/Height ' + imageData.height + '/ColorSpace/DeviceRGB/BitsPerComponent 8' +
+    smaskRef + '>>', rgb);
+  const res = 'Im' + S.xobj.size;
+  S.xobj.set(res, id);
+  return res;
+}
+
+// An `image` object stores a data URL. Decoding it back to pixels through a
+// canvas is the only route the browser offers, and it also normalises every
+// source format to the same RGBA the writer wants.
+function pdfRegisterImage(S, o) {
+  const img = imageFor(o.src);
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  const key = 'src:' + o.src;
+  if (S.xobj.has(key)) return S.xobj.get(key);
+  const cv = document.createElement('canvas');
+  cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  const g = cv.getContext('2d');
+  if (!g) return null;
+  g.drawImage(img, 0, 0);
+  let data;
+  try { data = g.getImageData(0, 0, cv.width, cv.height); } catch (err) { return null; }
+  const res = pdfImageXObject(S, data);
+  S.xobj.set(key, res);
+  return res;
+}
+
+// Spray, painted through the live engine at export resolution. Same borrowed
+// camera as rasterizeObject — one routine produces the mark on screen, in the
+// SVG and here, so the three cannot drift apart.
+function pdfSprayTile(S, o, dpmm) {
+  const b = objBounds(o);
+  if (!b) return null;
+  const B2 = BRUSHES[o.brush] || BRUSHES.ink;
+  const pad = ((o.size || o.width || 1) * B2.width * (B2.spread || 1) * 3) + 2;
+  const x0 = b.minX - pad, y0 = b.minY - pad;
+  const w = (b.maxX - b.minX) + pad*2, h = (b.maxY - b.minY) + pad*2;
+  if (w <= 0 || h <= 0) return null;
+  const px = Math.max(1, Math.min(3000, Math.round(w * dpmm)));
+  const py = Math.max(1, Math.min(3000, Math.round(h * dpmm)));
+  const cv = document.createElement('canvas');
+  cv.width = px; cv.height = py;
+  const g = cv.getContext('2d');
+  if (!g) return null;
+
+  const save = { panX:cam.panX, panY:cam.panY, zoom:cam.zoom, rot:cam.rot };
+  const saveCtx = ctx;
+  cam.rot = 0; cam.zoom = px / w;
+  cam.panX = -x0 * cam.zoom;
+  cam.panY = (y0 + h) * cam.zoom;
+  try { ctx = g; paintBrush(g, o, false); }
+  finally { ctx = saveCtx; cam.panX = save.panX; cam.panY = save.panY;
+            cam.zoom = save.zoom; cam.rot = save.rot; }
+
+  let data;
+  try { data = g.getImageData(0, 0, px, py); } catch (err) { return null; }
+  return { res: pdfImageXObject(S, data), x:x0, y:y0, w, h };
+}
+
+/* ── One page ─────────────────────────────────────────────────────────────── */
+function pdfBuildPage(doc, holder, sheet, opts) {
+  const mem = holder.mem;
+  const k = pdfUnitScale(sheet);
+  let W, H, ox = 0, oy = 0;
+  if (sheet) { const t = paperTrim(sheet); W = t.w; H = t.h; }
+  else {
+    // KREATE has no trim, so the page is the content plus a margin — the same
+    // rule the SVG export uses for the infinite space.
+    const b = contentBounds(mem) || { minX:0, minY:0, maxX:210, maxY:297 };
+    const pad = 10;
+    ox = b.minX - pad; oy = b.minY - pad;
+    W = (b.maxX - b.minX) + pad*2; H = (b.maxY - b.minY) + pad*2;
+  }
+
+  const S = pdfPageState(doc, k);
+  S.w('q');
+  if (ox || oy) S.w('1 0 0 1 ' + pdfN(-ox*k) + ' ' + pdfN(-oy*k) + ' cm');
+
+  // Spray first, under the vectors, matching the on-screen stacking order.
+  const sprays = mem.objects.filter(o => BRUSHES[o.brush] && BRUSHES[o.brush].fam === 'spray');
+  const visible = new Set(mem.layers.filter(l => l.visible !== false).map(l => l.name));
+  for (const o of sprays) {
+    if (o.layer && o.layer !== '__erase__' && !visible.has(o.layer)) continue;
+    const tile = pdfSprayTile(S, o, opts.rasterDpi / 25.4);
+    if (!tile) continue;
+    S.w('q');
+    S.w(pdfN(tile.w*k) + ' 0 0 ' + pdfN(tile.h*k) + ' ' + pdfN(tile.x*k) + ' ' + pdfN(tile.y*k) + ' cm');
+    S.w('/' + tile.res + ' Do'); S.w('Q');
+  }
+
+  // Grouped by layer, in layer order, so an editor that reads optional content
+  // shows the same structure the app does.
+  const byLayer = new Map();
+  for (const lay of mem.layers) byLayer.set(lay.name, []);
+  for (const o of mem.objects) {
+    if (o.type === 'erase') continue;
+    if (BRUSHES[o.brush] && BRUSHES[o.brush].fam === 'spray') continue;
+    if (!byLayer.has(o.layer)) byLayer.set(o.layer, []);
+    byLayer.get(o.layer).push(o);
+  }
+
+  for (const [name, items] of byLayer) {
+    if (!items.length) continue;
+    const lay = mem.layers.find(l => l.name === name);
+    const hidden = lay && lay.visible === false;
+    if (hidden && !opts.layers) continue;      // no OCGs to switch it back on
+    if (opts.layers) {
+      const id = opts.ocgIds.get(name);
+      if (id) { S.ocg.set(name, id); S.w('/OC /oc' + [...S.ocg.keys()].indexOf(name) + ' BDC'); }
+    }
+    for (const o of items) pdfEmitObject(S, o);
+    if (opts.layers && S.ocg.has(name)) S.w('EMC');
+  }
+  S.w('Q');
+
+  // ── Erasures ──
+  // destination-out has no PDF counterpart, and the SVG export solves it with
+  // a luminance mask. PDF has the same idea spelled differently: paint all the
+  // ink into a transparency group, then stamp that group through a luminosity
+  // soft mask that is white where ink survives and black where it was rubbed
+  // out. Without this an erased drawing exports with the erasures undone.
+  const erasers = mem.objects.filter(o => o.type === 'erase');
+  let body = S.out.join('\n');
+  let extraGS = '';
+  if (erasers.length) {
+    const M = pdfPageState(doc, k);
+    M.w('1 1 1 rg');
+    M.w('0 0 ' + pdfN(W*k) + ' ' + pdfN(H*k) + ' re f');
+    M.w('0 0 0 rg');
+    if (ox || oy) M.w('1 0 0 1 ' + pdfN(-ox*k) + ' ' + pdfN(-oy*k) + ' cm');
+    for (const e of erasers) {
+      const g = strokeGeometry(e);
+      if (!g) continue;
+      if (g.dot) { pdfCircle(M, g.dot.x, g.dot.y, g.dot.r); M.w('f'); continue; }
+      M.w(M.X(g.left[0].x) + ' ' + M.X(g.left[0].y) + ' m');
+      for (let i = 1; i < g.left.length; i++) M.w(M.X(g.left[i].x) + ' ' + M.X(g.left[i].y) + ' l');
+      for (let i = g.right.length - 1; i >= 0; i--) M.w(M.X(g.right[i].x) + ' ' + M.X(g.right[i].y) + ' l');
+      M.w('h f');
+      for (const cap of [g.capA, g.capB]) { pdfCircle(M, cap.x, cap.y, cap.r); M.w('f'); }
+    }
+    const maskForm = doc.add(
+      '<</Type/XObject/Subtype/Form/BBox [0 0 ' + pdfN(W*k) + ' ' + pdfN(H*k) + ']' +
+      '/Group<</S/Transparency/CS/DeviceGray>>/Resources<<>>>>',
+      pdfBytes(M.out.join('\n')));
+    const inkForm = doc.add(
+      '<</Type/XObject/Subtype/Form/BBox [0 0 ' + pdfN(W*k) + ' ' + pdfN(H*k) + ']' +
+      '/Group<</S/Transparency/CS/DeviceRGB>>/Resources ' + pdfPageResources(S, opts) + '>>',
+      pdfBytes(body));
+    const smaskGS = doc.add('<</Type/ExtGState/SMask<</S/Luminosity/G ' + maskForm +
+                            ' 0 R/BC[0]>>>>');
+    extraGS = '/GSm ' + smaskGS + ' 0 R';
+    body = 'q /GSm gs /FmInk Do Q';
+    S.xobj.set('FmInk', inkForm);
+  }
+
+  const contentId = doc.add('<<>>', pdfBytes(body));
+  return { contentId, S, W: W*k, H: H*k, extraGS };
+}
+
+function pdfPageResources(S, opts) {
+  const fonts = [...S.fonts.entries()].map(([base, res]) =>
+    '/' + res + ' <</Type/Font/Subtype/Type1/BaseFont/' + base + '/Encoding/WinAnsiEncoding>>').join('');
+  const gs = [...S.gs.values()].map(g => '/' + g.res + ' ' + g.id + ' 0 R').join('');
+  const xo = [...S.xobj.entries()].filter(([kk]) => !kk.startsWith('src:'))
+              .map(([res, id]) => '/' + res + ' ' + id + ' 0 R').join('');
+  const props = [...S.ocg.entries()].map(([name, id], i) => '/oc' + i + ' ' + id + ' 0 R').join('');
+  return '<</ProcSet[/PDF/Text/ImageB/ImageC]' +
+         (fonts ? '/Font<<' + fonts + '>>' : '') +
+         (gs ? '/ExtGState<<' + gs + '>>' : '') +
+         (xo ? '/XObject<<' + xo + '>>' : '') +
+         (props ? '/Properties<<' + props + '>>' : '') + '>>';
+}
+
+/* ── Document ─────────────────────────────────────────────────────────────── */
+async function pdfBuildDocument(pages, opts) {
+  const doc = pdfDoc();
+  const catalogId = doc.alloc();
+  const pagesId = doc.alloc();
+
+  // Optional content groups are created once for the whole document, so a
+  // layer that appears on three sheets is one entry in the reader's panel
+  // rather than three that have to be switched off individually.
+  const ocgIds = new Map();
+  if (opts.layers) {
+    for (const p of pages)
+      for (const lay of p.holder.mem.layers)
+        if (!ocgIds.has(lay.name))
+          ocgIds.set(lay.name, doc.add('<</Type/OCG/Name ' + pdfString(lay.name) + '>>'));
+  }
+  opts.ocgIds = ocgIds;
+
+  const kids = [];
+  for (const p of pages) {
+    const built = pdfBuildPage(doc, p.holder, p.sheet, opts);
+    let res = pdfPageResources(built.S, opts);
+    if (built.extraGS) {
+      // The soft-mask state lives on the page, not inside the ink group it is
+      // applied to, so it is spliced in after the group's own resources.
+      res = res.replace(/\/ExtGState<</, '/ExtGState<<' + built.extraGS);
+      if (!/\/ExtGState/.test(res)) res = res.replace(/>>$/, '/ExtGState<<' + built.extraGS + '>>>>');
+    }
+    const pageId = doc.add(
+      '<</Type/Page/Parent ' + pagesId + ' 0 R' +
+      '/MediaBox [0 0 ' + pdfN(built.W) + ' ' + pdfN(built.H) + ']' +
+      '/Resources ' + res +
+      '/Contents ' + built.contentId + ' 0 R>>');
+    kids.push(pageId);
+  }
+
+  doc.set(pagesId, '<</Type/Pages/Kids[' + kids.map(i => i + ' 0 R').join(' ') +
+                   ']/Count ' + kids.length + '>>');
+
+  let oc = '';
+  if (opts.layers && ocgIds.size) {
+    const all = [...ocgIds.values()].map(i => i + ' 0 R').join(' ');
+    const off = [];
+    for (const p of pages)
+      for (const lay of p.holder.mem.layers)
+        if (lay.visible === false && ocgIds.has(lay.name)) off.push(ocgIds.get(lay.name) + ' 0 R');
+    oc = '/OCProperties<</OCGs[' + all + ']/D<</Order[' + all + ']' +
+         (off.length ? '/OFF[' + [...new Set(off)].join(' ') + ']' : '') + '>>>>';
+  }
+  doc.set(catalogId, '<</Type/Catalog/Pages ' + pagesId + ' 0 R' + oc + '>>');
+  return pdfSerialize(doc, catalogId);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PDF — READER
+
+   Opening a PDF is not the mirror of writing one. Writing is arithmetic;
+   reading means decompressing streams, decoding half a dozen colour spaces,
+   unpicking embedded font subsets and running a small stack machine. That is
+   pdf.js's job, and it is loaded on demand — the first time a PDF is actually
+   opened — so a KANVAS that never touches one never pays for it.
+
+   What this file does is the part pdf.js will not do: turn a page of drawing
+   operators into KANVAS objects. Every path arrives as real geometry —
+   `re` becomes a rect, `c` becomes a bezier, subpaths keep their winding so
+   holes stay holes. Nothing is rasterised on the way in except bitmaps that
+   were bitmaps to begin with.
+
+   ── TEXT ────────────────────────────────────────────────────────────────────
+   A PDF names its fonts and ships their outlines; it does not ship the notion
+   of "a paragraph". So there are two honest readings of text, and CorelDRAW is
+   right to ask rather than guess:
+
+     LIVE TEXT  Every run becomes an editable text object. You can retype it.
+                The catch is the font: the file's embedded subset is not
+                installed on the machine, so the run is re-set in the nearest
+                available face and the line length shifts slightly.
+
+     CURVES     Every glyph becomes its own outline — the exact contours the
+                font carried, as bezier paths. The shapes are pixel-correct
+                and stay correct forever. It is no longer text: you can push
+                the nodes around but you cannot fix a typo.
+
+     LINES      The same outlines, flattened to straight segments. What a
+                plotter, a laser cutter or a CNC actually wants, and what a
+                node-editing pass wants when curves get in the way.
+
+   Curves and Lines both need the glyph program, which pdf.js only hands over
+   when font-face loading is disabled — hence disableFontFace below. If a
+   particular font will not give up its outlines, that run silently falls back
+   to live text and the import report says so, rather than the glyphs quietly
+   going missing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const PDFJS_VERSION = '3.11.174';
+const PDFJS_SOURCES = [
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_VERSION,
+  'https://unpkg.com/pdfjs-dist@' + PDFJS_VERSION + '/build',
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION + '/build',
+];
+
+let _pdfjsPromise = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (_pdfjsPromise) return _pdfjsPromise;
+  _pdfjsPromise = new Promise((resolve, reject) => {
+    let i = 0;
+    const tryNext = () => {
+      if (i >= PDFJS_SOURCES.length) {
+        _pdfjsPromise = null;
+        reject(new Error('offline'));
+        return;
+      }
+      const base = PDFJS_SOURCES[i++];
+      const s = document.createElement('script');
+      s.src = base + '/pdf.min.js';
+      s.onload = () => {
+        if (!window.pdfjsLib) { tryNext(); return; }
+        // The worker keeps parsing off the UI thread. Without it pdf.js still
+        // runs, but a large page locks the interface for seconds.
+        try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdf.worker.min.js'; }
+        catch (err) {}
+        resolve(window.pdfjsLib);
+      };
+      s.onerror = () => { s.remove(); tryNext(); };
+      document.head.appendChild(s);
+    };
+    tryNext();
+  });
+  return _pdfjsPromise;
+}
+
+/* ── Matrices ─────────────────────────────────────────────────────────────
+   PDF's [a b c d e f] with row vectors, which is also the canvas convention,
+   so one set of helpers serves both the content stream and the glyph recorder.
+   ─────────────────────────────────────────────────────────────────────────── */
+function mtx(a, b, c, d, e, f) { return [a, b, c, d, e, f]; }
+const MTX_ID = [1, 0, 0, 1, 0, 0];
+function mtxMul(m, n) {                       // apply m, then n
+  return [
+    m[0]*n[0] + m[1]*n[2],            m[0]*n[1] + m[1]*n[3],
+    m[2]*n[0] + m[3]*n[2],            m[2]*n[1] + m[3]*n[3],
+    m[4]*n[0] + m[5]*n[2] + n[4],     m[4]*n[1] + m[5]*n[3] + n[5],
+  ];
+}
+function mtxApply(m, x, y) { return { x: m[0]*x + m[2]*y + m[4], y: m[1]*x + m[3]*y + m[5] }; }
+// Average scale, for turning a line width or a font size into a single length.
+function mtxScale(m) {
+  return (Math.hypot(m[0], m[1]) + Math.hypot(m[2], m[3])) / 2;
+}
+
+/* ── Flattening ─────────────────────────────────────────────────────────────
+   Adaptive: subdivide only where the curve is actually curved, so a nearly
+   straight segment costs two points and a tight corner costs as many as it
+   needs. A fixed step would give both the same treatment and be wrong twice.
+   ─────────────────────────────────────────────────────────────────────────── */
+function flattenCubic(p0, c1, c2, p3, tol, out, depth) {
+  const d = depth == null ? 0 : depth;
+  const dx = p3.x - p0.x, dy = p3.y - p0.y;
+  const d1 = Math.abs((c1.x-p3.x)*dy - (c1.y-p3.y)*dx);
+  const d2 = Math.abs((c2.x-p3.x)*dy - (c2.y-p3.y)*dx);
+  const dd = (d1 + d2) * (d1 + d2);
+  if (d > 16 || dd < tol * tol * (dx*dx + dy*dy) || (dx*dx + dy*dy) < 1e-12) {
+    out.push({ x: p3.x, y: p3.y });
+    return;
+  }
+  const m = (a, b) => ({ x:(a.x+b.x)/2, y:(a.y+b.y)/2 });
+  const p01 = m(p0, c1), p12 = m(c1, c2), p23 = m(c2, p3);
+  const p012 = m(p01, p12), p123 = m(p12, p23), mid = m(p012, p123);
+  flattenCubic(p0, p01, p012, mid, tol, out, d+1);
+  flattenCubic(mid, p123, p23, p3, tol, out, d+1);
+}
+// A straight run as a cubic, exactly: controls at the thirds.
+function lineAsBezier(p0, p1) {
+  return { x0:p0.x, y0:p0.y,
+           cx1:p0.x + (p1.x-p0.x)/3, cy1:p0.y + (p1.y-p0.y)/3,
+           cx2:p0.x + (p1.x-p0.x)*2/3, cy2:p0.y + (p1.y-p0.y)*2/3,
+           x3:p1.x, y3:p1.y };
+}
+
+/* ── Glyph recorder ─────────────────────────────────────────────────────────
+   pdf.js builds a glyph by calling canvas path methods on whatever object it
+   is handed. It never checks that the object is a real context, so handing it
+   this one captures the outline instead of drawing it. That is the whole
+   trick behind text-as-curves, and it costs a few dozen lines rather than a
+   second font parser.
+   ─────────────────────────────────────────────────────────────────────────── */
+function glyphRecorder() {
+  const subs = [];
+  let m = MTX_ID.slice();
+  const stack = [];
+  let cur = null, at = { x:0, y:0 };
+  const P = (x, y) => mtxApply(m, x, y);
+  // pdf.js emits scale("size","-size") as literal argument names when its
+  // eval path is unavailable. Numbers pass straight through; anything else is
+  // resolved against the size actually requested.
+  const num = (v, size) => {
+    if (typeof v === 'number') return v;
+    const s = String(v);
+    if (s === 'size') return size;
+    if (s === '-size') return -size;
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  };
+  const rec = {
+    _size: 1,
+    save() { stack.push(m.slice()); },
+    restore() { m = stack.pop() || MTX_ID.slice(); },
+    transform(a, b, c, d, e, f) {
+      const s = this._size;
+      m = mtxMul(mtx(num(a,s), num(b,s), num(c,s), num(d,s), num(e,s), num(f,s)), m);
+    },
+    scale(sx, sy) { this.transform(sx, 0, 0, sy, 0, 0); },
+    translate(tx, ty) { this.transform(1, 0, 0, 1, tx, ty); },
+    rotate(a) { const c = Math.cos(a), s = Math.sin(a); this.transform(c, s, -s, c, 0, 0); },
+    setTransform(a, b, c, d, e, f) { m = mtx(a, b, c, d, e, f); },
+    beginPath() {},
+    moveTo(x, y) { at = P(x, y); cur = { start:at, segs:[], closed:false }; subs.push(cur); },
+    lineTo(x, y) {
+      if (!cur) this.moveTo(x, y);
+      const p = P(x, y);
+      cur.segs.push(lineAsBezier(at, p)); at = p;
+    },
+    bezierCurveTo(x1, y1, x2, y2, x3, y3) {
+      if (!cur) this.moveTo(x1, y1);
+      const c1 = P(x1, y1), c2 = P(x2, y2), p = P(x3, y3);
+      cur.segs.push({ x0:at.x, y0:at.y, cx1:c1.x, cy1:c1.y, cx2:c2.x, cy2:c2.y, x3:p.x, y3:p.y });
+      at = p;
+    },
+    quadraticCurveTo(cx, cy, x, y) {
+      if (!cur) this.moveTo(cx, cy);
+      const c = P(cx, cy), p = P(x, y);
+      // Exact degree elevation — a quadratic IS a cubic, so nothing is lost.
+      cur.segs.push({ x0:at.x, y0:at.y,
+                      cx1:at.x + 2/3*(c.x-at.x), cy1:at.y + 2/3*(c.y-at.y),
+                      cx2:p.x  + 2/3*(c.x-p.x),  cy2:p.y  + 2/3*(c.y-p.y),
+                      x3:p.x, y3:p.y });
+      at = p;
+    },
+    closePath() { if (cur) cur.closed = true; },
+    // Everything pdf.js might reach for while it thinks it is drawing.
+    fill() {}, stroke() {}, clip() {}, rect() {}, arc() {}, ellipse() {},
+    setLineDash() {}, measureText() { return { width:0 }; },
+    get subpaths() { return subs; },
+  };
+  return rec;
+}
+
+// Outline one glyph, in em units with Y already pointing up.
+function glyphOutline(font, commonObjs, fontChar) {
+  if (!font || typeof font.getPathGenerator !== 'function') return null;
+  let gen;
+  try { gen = font.getPathGenerator(commonObjs, fontChar); } catch (err) { return null; }
+  if (typeof gen !== 'function') return null;              // a Path2D — not readable
+  const rec = glyphRecorder();
+  rec._size = 1;
+  try { gen(rec, 1); } catch (err) { return null; }
+  const subs = rec.subpaths.filter(s => s.segs.length);
+  if (!subs.length) return null;
+  // The generator's leading scale(size, -size) leaves the glyph Y-down,
+  // because that is what a canvas wants. Text space is Y-up, so flip back.
+  for (const s of subs) {
+    s.start = { x:s.start.x, y:-s.start.y };
+    for (const b of s.segs) { b.y0 = -b.y0; b.cy1 = -b.cy1; b.cy2 = -b.cy2; b.y3 = -b.y3; }
+  }
+  return subs;
+}
+
+/* ── Colour from the content stream ───────────────────────────────────────── */
+function pdfRgbToHex(r, g, b) {
+  const c = v => ('0' + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2);
+  return '#' + c(r) + c(g) + c(b);
+}
+function cmykToHex(c, m, y, k) {
+  return pdfRgbToHex(255*(1-Math.min(1, c+k)), 255*(1-Math.min(1, m+k)), 255*(1-Math.min(1, y+k)));
+}
+
+/* ── Image decoding ───────────────────────────────────────────────────────── */
+// `flip` is resolved here rather than stored on the object. A PDF places
+// images through a matrix that is very often mirrored, and baking the mirror
+// into the bitmap means the object model never has to carry a flag that every
+// renderer and both exporters would then have to remember to honour.
+function pdfDecodeImage(obj, flip) {
+  if (!obj) return null;
+  const cv = document.createElement('canvas');
+  const g = cv.getContext('2d');
+  if (!g) return null;
+  // Newer pdf.js hands back an ImageBitmap; older builds hand back raw bytes
+  // with a `kind` telling you how they are packed.
+  if (obj.bitmap) {
+    cv.width = obj.bitmap.width; cv.height = obj.bitmap.height;
+    g.drawImage(obj.bitmap, 0, 0);
+  } else if (obj.data && obj.width && obj.height) {
+    cv.width = obj.width; cv.height = obj.height;
+    const out = g.createImageData(obj.width, obj.height);
+    const n = obj.width * obj.height;
+    const src = obj.data;
+    if (obj.kind === 3 || src.length >= n*4) {
+      out.data.set(src.subarray(0, n*4));
+    } else if (obj.kind === 2 || src.length >= n*3) {
+      for (let i = 0; i < n; i++) {
+        out.data[i*4] = src[i*3]; out.data[i*4+1] = src[i*3+1];
+        out.data[i*4+2] = src[i*3+2]; out.data[i*4+3] = 255;
+      }
+    } else {
+      for (let i = 0; i < n; i++) {
+        const v = src[i];
+        out.data[i*4] = out.data[i*4+1] = out.data[i*4+2] = v;
+        out.data[i*4+3] = 255;
+      }
+    }
+    g.putImageData(out, 0, 0);
+  } else return null;
+  if (flip) {
+    const fv = document.createElement('canvas');
+    fv.width = cv.width; fv.height = cv.height;
+    const fg = fv.getContext('2d');
+    if (fg) { fg.translate(0, fv.height); fg.scale(1, -1); fg.drawImage(cv, 0, 0);
+              try { return fv.toDataURL('image/png'); } catch (err) { return null; } }
+  }
+  try { return cv.toDataURL('image/png'); } catch (err) { return null; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THE INTERPRETER
+
+   One pass over the operator list, holding the graphics state PDF defines:
+   a CTM, a colour for fill and one for stroke, a line width, and — inside
+   BT/ET — a text matrix and the font state that goes with it. Everything that
+   paints reads that state and emits a KANVAS object.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function pdfInterpretPage(ops, page, opts, report) {
+  const L = window.pdfjsLib.OPS;
+  const out = [];
+  const G = {
+    ctm: opts.base.slice(),
+    fill: '#000000', stroke: '#000000',
+    lw: 1, alpha: 1, dash: false,
+    clip: null,
+  };
+  const stack = [];
+  // Text state, per the PDF text object model.
+  let T = null;
+  let font = null, fontSize = 0, charSp = 0, wordSp = 0, hScale = 1, rise = 0,
+      leading = 0, renderMode = 0;
+
+  let subpaths = [];              // current path, in page space
+  let cur = null, at = { x:0, y:0 }, start = { x:0, y:0 };
+  let pendingClip = false;
+
+  const P = (x, y) => mtxApply(G.ctm, x, y);
+  const moveTo = (x, y) => { at = start = P(x, y); cur = { start:at, segs:[], closed:false, rect:null };
+                             subpaths.push(cur); };
+  const lineTo = (x, y) => { if (!cur) return moveTo(x, y);
+                             const p = P(x, y); cur.segs.push(lineAsBezier(at, p)); at = p; };
+  const curveTo = (x1,y1,x2,y2,x3,y3) => {
+    if (!cur) moveTo(x1, y1);
+    const c1 = P(x1,y1), c2 = P(x2,y2), p = P(x3,y3);
+    cur.segs.push({ x0:at.x, y0:at.y, cx1:c1.x, cy1:c1.y, cx2:c2.x, cy2:c2.y, x3:p.x, y3:p.y });
+    cur.curved = true; at = p;
+  };
+
+  function subBounds(list) {
+    let minX = 1e12, minY = 1e12, maxX = -1e12, maxY = -1e12;
+    for (const s of list) {
+      const h = (x, y) => { if (x<minX)minX=x; if (y<minY)minY=y; if (x>maxX)maxX=x; if (y>maxY)maxY=y; };
+      h(s.start.x, s.start.y);
+      for (const b of s.segs) { h(b.x3, b.y3); h(b.cx1, b.cy1); h(b.cx2, b.cy2); }
+    }
+    return { minX, minY, maxX, maxY };
+  }
+  // Rectangular clips are the common case by a wide margin — a frame, a page
+  // box, a crop. Honouring just those catches most of the content that should
+  // not be visible without needing a clip primitive in the object model.
+  function culled(list) {
+    if (!G.clip) return false;
+    const b = subBounds(list);
+    return b.maxX < G.clip.minX || b.minX > G.clip.maxX ||
+           b.maxY < G.clip.minY || b.minY > G.clip.maxY;
+  }
+
+  function emitPath(doFill, doStroke, evenOdd) {
+    const live = subpaths.filter(s => s.segs.length || s.rect);
+    if (live.length && !culled(live)) {
+      const style = {
+        color: doFill ? G.fill : G.stroke,
+        fill: !!doFill,
+        stroke: doStroke ? undefined : false,
+        width: Math.max(G.lw * mtxScale(G.ctm), 0.03),
+        opacity: G.alpha,
+        dashed: G.dash,
+      };
+      if (doFill && live.length > 1) {
+        // Several subpaths under one fill is how a PDF says "with holes".
+        // They travel as ONE object with its winding rule intact — split them
+        // into separate objects and the counter of an O fills in solid.
+        //
+        // The extra contours go in `holes` rather than in a list that also
+        // holds the first. Aliasing beziers to subs[0] would survive exactly
+        // until something transformed the object and mapped the shared array
+        // twice, or until a JSON round trip quietly un-shared it.
+        const subs = live.map(s => closeSub(s));
+        out.push(Object.assign({ type:'path', beziers:subs[0], holes:subs.slice(1),
+                                 closed:true, evenOdd:!!evenOdd }, style));
+      } else {
+        for (const s of live) out.push(subToObject(s, style, doFill));
+      }
+    }
+    subpaths = []; cur = null;
+    if (pendingClip) {
+      const b = live.length ? subBounds(live) : null;
+      if (b) G.clip = G.clip
+        ? { minX:Math.max(G.clip.minX, b.minX), minY:Math.max(G.clip.minY, b.minY),
+            maxX:Math.min(G.clip.maxX, b.maxX), maxY:Math.min(G.clip.maxY, b.maxY) }
+        : b;
+      pendingClip = false;
+    }
+  }
+  function closeSub(s) {
+    const bez = s.segs.slice();
+    const last = bez.length ? { x:bez[bez.length-1].x3, y:bez[bez.length-1].y3 } : s.start;
+    if (Math.hypot(last.x - s.start.x, last.y - s.start.y) > 1e-9)
+      bez.push(lineAsBezier(last, s.start));
+    return bez;
+  }
+  // The best KANVAS object for one subpath. A rectangle stays a rectangle and
+  // a polyline stays a polyline, because those are editable as themselves —
+  // demoting everything to a bezier path would be lossless geometrically and
+  // useless practically.
+  function subToObject(s, style, doFill) {
+    if (s.rect && !s.curved) {
+      const r = s.rect;
+      return Object.assign({ type:'rect', x:Math.min(r.x0,r.x1), y:Math.min(r.y0,r.y1),
+                             w:Math.abs(r.x1-r.x0), h:Math.abs(r.y1-r.y0) }, style);
+    }
+    if (!s.curved) {
+      const pts = [{ x:s.start.x, y:s.start.y }].concat(s.segs.map(b => ({ x:b.x3, y:b.y3 })));
+      if (pts.length === 2 && !doFill)
+        return Object.assign({ type:'line', x1:pts[0].x, y1:pts[0].y,
+                               x2:pts[1].x, y2:pts[1].y, brush:'technical' }, style);
+      return Object.assign({ type:'poly', pts, closed:!!s.closed || !!doFill }, style);
+    }
+    const bez = (s.closed || doFill) ? closeSub(s) : s.segs.slice();
+    return Object.assign({ type:'path', beziers:bez,
+                           closed:!!s.closed || !!doFill, brush:'technical' }, style);
+  }
+
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  const textRuns = [];            // fallback runs, when outlining is refused
+  let runBuf = null;
+
+  function flushRun() {
+    if (runBuf && runBuf.text.trim()) textRuns.push(runBuf);
+    runBuf = null;
+  }
+  function trm() {
+    return mtxMul(mtx(fontSize*hScale, 0, 0, fontSize, 0, rise), mtxMul(T.m, G.ctm));
+  }
+  function showGlyphs(glyphs) {
+    if (!T || renderMode === 3 || renderMode === 7) {          // invisible text
+      if (Array.isArray(glyphs)) advanceOnly(glyphs);
+      return;
+    }
+    for (const gl of glyphs) {
+      if (gl == null) continue;
+      if (typeof gl === 'number') {                            // kerning
+        T.m = mtxMul(mtx(1, 0, 0, 1, -gl/1000 * fontSize * hScale, 0), T.m);
+        continue;
+      }
+      const isSpace = gl.isSpace || gl.unicode === ' ';
+      if (!isSpace && opts.textMode !== 'live') {
+        const subs = font ? glyphOutline(font, page.commonObjs, gl.fontChar) : null;
+        if (subs) {
+          const M = trm();
+          const style = {
+            color: (renderMode === 1 || renderMode === 5) ? G.stroke : G.fill,
+            fill: true, stroke: false, opacity: G.alpha, width: 0.05,
+          };
+          const mapped = subs.map(s => closeSub({
+            start: mtxApply(M, s.start.x, s.start.y),
+            segs: s.segs.map(b => {
+              const p0 = mtxApply(M, b.x0, b.y0), c1 = mtxApply(M, b.cx1, b.cy1);
+              const c2 = mtxApply(M, b.cx2, b.cy2), p3 = mtxApply(M, b.x3, b.y3);
+              return { x0:p0.x, y0:p0.y, cx1:c1.x, cy1:c1.y,
+                       cx2:c2.x, cy2:c2.y, x3:p3.x, y3:p3.y };
+            }),
+            closed: true,
+          }));
+          if (!culled(mapped.map(bz => ({ start:{x:bz[0].x0,y:bz[0].y0}, segs:bz })))) {
+            if (opts.textMode === 'lines') {
+              // One closed polygon per contour. Flattened here rather than at
+              // render time, because the point of asking for lines is that the
+              // FILE contains lines.
+              for (const bz of mapped) {
+                const pts = [{ x:bz[0].x0, y:bz[0].y0 }];
+                for (const b of bz)
+                  flattenCubic({x:b.x0,y:b.y0}, {x:b.cx1,y:b.cy1}, {x:b.cx2,y:b.cy2},
+                               {x:b.x3,y:b.y3}, opts.tol, pts);
+                if (pts.length > 2) out.push(Object.assign({ type:'poly', pts, closed:true }, style));
+              }
+            } else {
+              // Nonzero winding, which is what fonts are drawn with: the
+              // counter of an "o" is wound the other way and drops out on its
+              // own. Even-odd here would hollow out overlapping contours.
+              out.push(Object.assign({ type:'path', beziers:mapped[0],
+                                       holes:mapped.slice(1), closed:true,
+                                       evenOdd:false }, style));
+            }
+            report.glyphs++;
+          }
+        } else {
+          // No outline available for this face. Keep the words rather than
+          // dropping them, and say so at the end.
+          collectRun(gl);
+          report.fontFallbacks.add(font && font.loadedName ? (font.name || font.loadedName) : 'unnamed font');
+        }
+      } else if (opts.textMode === 'live' && !isSpace) {
+        collectRun(gl);
+      } else if (isSpace && runBuf) {
+        runBuf.text += ' ';
+      }
+      // Advance, per the text-space formula: glyph width, letter spacing,
+      // and word spacing on the space character, all scaled horizontally.
+      const w0 = (gl.width || 0) / 1000;
+      const tx = (w0 * fontSize + charSp + (isSpace ? wordSp : 0)) * hScale;
+      T.m = mtxMul(mtx(1, 0, 0, 1, tx, 0), T.m);
+    }
+  }
+  function advanceOnly(glyphs) {
+    for (const gl of glyphs) {
+      if (gl == null) continue;
+      if (typeof gl === 'number') { T.m = mtxMul(mtx(1,0,0,1, -gl/1000*fontSize*hScale, 0), T.m); continue; }
+      const isSpace = gl.isSpace || gl.unicode === ' ';
+      const tx = ((gl.width||0)/1000 * fontSize + charSp + (isSpace ? wordSp : 0)) * hScale;
+      T.m = mtxMul(mtx(1,0,0,1, tx, 0), T.m);
+    }
+  }
+  function collectRun(gl) {
+    const M = trm();
+    if (!runBuf) runBuf = { text:'', m:M, color:G.fill, alpha:G.alpha };
+    // A jump in position, or a change of size, ends the run — otherwise two
+    // columns of a table arrive as one very wide line of text.
+    else if (Math.abs(M[5] - runBuf.m[5]) > 0.01 ||
+             Math.abs(mtxScale(M) - mtxScale(runBuf.m)) > 0.01) {
+      flushRun();
+      runBuf = { text:'', m:M, color:G.fill, alpha:G.alpha };
+    }
+    runBuf.text += (gl.unicode != null ? gl.unicode : '');
+  }
+
+  /* ── The loop ─────────────────────────────────────────────────────────── */
+  const fn = ops.fnArray, ar = ops.argsArray;
+  for (let i = 0; i < fn.length; i++) {
+    const a = ar[i];
+    switch (fn[i]) {
+      case L.save: stack.push({ ...G, ctm:G.ctm.slice(), clip:G.clip ? {...G.clip} : null }); break;
+      case L.restore: {
+        const s = stack.pop();
+        if (s) { G.ctm = s.ctm; G.fill = s.fill; G.stroke = s.stroke; G.lw = s.lw;
+                 G.alpha = s.alpha; G.dash = s.dash; G.clip = s.clip; }
+        break;
+      }
+      case L.transform: G.ctm = mtxMul(mtx(a[0], a[1], a[2], a[3], a[4], a[5]), G.ctm); break;
+      case L.setLineWidth: G.lw = a[0]; break;
+      case L.setDash: G.dash = !!(a[0] && a[0].length); break;
+      case L.setGState:
+        for (const [key, val] of (a[0] || [])) {
+          if (key === 'LW') G.lw = val;
+          else if (key === 'ca') G.alpha = val;
+          else if (key === 'D') G.dash = !!(val && val[0] && val[0].length);
+          else if (key === 'Font' && val) { font = null; fontSize = val[1] || fontSize; }
+        }
+        break;
+      case L.setFillRGBColor:   G.fill   = pdfRgbToHex(a[0], a[1], a[2]); break;
+      case L.setStrokeRGBColor: G.stroke = pdfRgbToHex(a[0], a[1], a[2]); break;
+      case L.setFillGray:       G.fill   = pdfRgbToHex(a[0]*255, a[0]*255, a[0]*255); break;
+      case L.setStrokeGray:     G.stroke = pdfRgbToHex(a[0]*255, a[0]*255, a[0]*255); break;
+      case L.setFillCMYKColor:   G.fill   = cmykToHex(a[0], a[1], a[2], a[3]); break;
+      case L.setStrokeCMYKColor: G.stroke = cmykToHex(a[0], a[1], a[2], a[3]); break;
+
+      case L.constructPath: {
+        const sub = a[0], co = a[1];
+        let p = 0;
+        for (let j = 0; j < sub.length; j++) {
+          switch (sub[j]) {
+            case L.moveTo:   moveTo(co[p], co[p+1]); p += 2; break;
+            case L.lineTo:   lineTo(co[p], co[p+1]); p += 2; break;
+            case L.curveTo:  curveTo(co[p],co[p+1],co[p+2],co[p+3],co[p+4],co[p+5]); p += 6; break;
+            // `v`: the current point doubles as the first control point.
+            case L.curveTo2: {
+              const inv = mtxInvApply(G.ctm, at);
+              curveTo(inv.x, inv.y, co[p], co[p+1], co[p+2], co[p+3]); p += 4; break;
+            }
+            // `y`: the endpoint doubles as the second control point.
+            case L.curveTo3: curveTo(co[p],co[p+1],co[p+2],co[p+3],co[p+2],co[p+3]); p += 4; break;
+            case L.closePath: if (cur) { cur.closed = true; at = start; } break;
+            case L.rectangle: {
+              const x = co[p], y = co[p+1], w = co[p+2], h = co[p+3]; p += 4;
+              moveTo(x, y); lineTo(x+w, y); lineTo(x+w, y+h); lineTo(x, y+h);
+              if (cur) {
+                cur.closed = true;
+                // Only an axis-aligned transform leaves a rectangle a
+                // rectangle; a rotated one has to stay a polygon.
+                if (Math.abs(G.ctm[1]) < 1e-9 && Math.abs(G.ctm[2]) < 1e-9) {
+                  const c0 = P(x, y), c1 = P(x+w, y+h);
+                  cur.rect = { x0:c0.x, y0:c0.y, x1:c1.x, y1:c1.y };
+                }
+              }
+              break;
+            }
+          }
+        }
+        break;
+      }
+      case L.fill:              emitPath(true,  false, false); break;
+      case L.eoFill:            emitPath(true,  false, true);  break;
+      case L.stroke:            emitPath(false, true,  false); break;
+      case L.closeStroke:       if (cur) cur.closed = true; emitPath(false, true, false); break;
+      case L.fillStroke:        emitPath(true,  true,  false); break;
+      case L.eoFillStroke:      emitPath(true,  true,  true);  break;
+      case L.closeFillStroke:   if (cur) cur.closed = true; emitPath(true, true, false); break;
+      case L.closeEOFillStroke: if (cur) cur.closed = true; emitPath(true, true, true);  break;
+      case L.endPath:           emitPath(false, false, false); break;
+      case L.clip: case L.eoClip: pendingClip = true; break;
+
+      case L.beginText: T = { m:MTX_ID.slice(), line:MTX_ID.slice() }; break;
+      case L.endText:   flushRun(); T = null; break;
+      case L.setFont: {
+        fontSize = a[1];
+        try { font = page.commonObjs.get(a[0]); } catch (err) { font = null; }
+        break;
+      }
+      case L.setTextMatrix:
+        if (T) { T.m = mtx(a[0],a[1],a[2],a[3],a[4],a[5]); T.line = T.m.slice(); flushRun(); }
+        break;
+      case L.setCharSpacing: charSp = a[0]; break;
+      case L.setWordSpacing: wordSp = a[0]; break;
+      case L.setHScale:      hScale = a[0] / 100; break;
+      case L.setLeading:     leading = a[0]; break;
+      case L.setTextRise:    rise = a[0]; break;
+      case L.setTextRenderingMode: renderMode = a[0]; break;
+      case L.setLeadingMoveText:
+        leading = -a[1];
+        if (T) { T.line = mtxMul(mtx(1,0,0,1,a[0],a[1]), T.line); T.m = T.line.slice(); flushRun(); }
+        break;
+      case L.moveText:
+        if (T) { T.line = mtxMul(mtx(1,0,0,1,a[0],a[1]), T.line); T.m = T.line.slice(); flushRun(); }
+        break;
+      case L.nextLine:
+        if (T) { T.line = mtxMul(mtx(1,0,0,1,0,-leading), T.line); T.m = T.line.slice(); flushRun(); }
+        break;
+      case L.showText: if (T) showGlyphs(a[0] || []); break;
+      case L.showSpacedText: if (T) showGlyphs(a[0] || []); break;
+      case L.nextLineShowText:
+        if (T) { T.line = mtxMul(mtx(1,0,0,1,0,-leading), T.line); T.m = T.line.slice();
+                 flushRun(); showGlyphs(a[0] || []); }
+        break;
+      case L.nextLineSetSpacingShowText:
+        wordSp = a[0]; charSp = a[1];
+        if (T) { T.line = mtxMul(mtx(1,0,0,1,0,-leading), T.line); T.m = T.line.slice();
+                 flushRun(); showGlyphs(a[2] || []); }
+        break;
+
+      case L.paintImageXObject: case L.paintImageXObjectRepeat: {
+        let obj = null;
+        try { obj = page.objs.get(a[0]); } catch (err) { obj = null; }
+        const o = pdfImageObject(obj, G);
+        if (!o) { report.skippedImages++; break; }
+        out.push(o); report.images++;
+        break;
+      }
+      case L.paintInlineImageXObject: {
+        const o = pdfImageObject(a[0], G);
+        if (!o) { report.skippedImages++; break; }
+        out.push(o); report.images++;
+        break;
+      }
+      case L.paintImageMaskXObject: report.skippedImages++; break;
+    }
+  }
+  flushRun();
+
+  // Runs that could not be outlined, plus everything in live-text mode.
+  for (const r of textRuns) {
+    const size = Math.hypot(r.m[2], r.m[3]) || Math.hypot(r.m[0], r.m[1]);
+    if (size < 0.01) continue;
+    out.push({ type:'text', x:r.m[4], y:r.m[5], text:r.text, size,
+               rot: Math.atan2(r.m[1], r.m[0]) * 180 / Math.PI,
+               color:r.color, opacity:r.alpha, align:'left',
+               font:'Syne, sans-serif' });
+    report.textRuns++;
+  }
+  return out;
+}
+
+// A bitmap is placed by mapping the unit square through the CTM, so the
+// matrix carries the size, the angle and the mirroring all at once. The
+// bottom-left corner is the image space origin, which is also where a KANVAS
+// image object is anchored.
+function pdfImageObject(raw, G) {
+  const m = G.ctm;
+  const w = Math.hypot(m[0], m[1]), h = Math.hypot(m[2], m[3]);
+  if (!(w > 0.01) || !(h > 0.01)) return null;
+  const src = pdfDecodeImage(raw, (m[0]*m[3] - m[1]*m[2]) < 0);
+  if (!src) return null;
+  return { type:'image', src, x:m[4], y:m[5], w, h,
+           rot: Math.atan2(m[1], m[0]) * 180 / Math.PI,
+           opacity: G.alpha };
+}
+
+// Only ever used to recover the current point in user space for the `v`
+// operator, which is defined in terms of it.
+function mtxInvApply(m, p) {
+  const det = m[0]*m[3] - m[1]*m[2];
+  if (Math.abs(det) < 1e-12) return { x:0, y:0 };
+  const dx = p.x - m[4], dy = p.y - m[5];
+  return { x: ( dx*m[3] - dy*m[2]) / det, y: (-dx*m[1] + dy*m[0]) / det };
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   IMAGE OBJECTS
+
+   The one primitive KANVAS did not have, and the one a PDF cannot do without.
+   A photograph placed in a brochure has no vector reading; refusing to carry
+   it would mean every imported page came in with holes in it.
+
+     image {x, y, w, h, rot, src}     x,y is the BOTTOM-LEFT corner, y-up,
+                                      matching every other object here.
+
+   `src` is a data URL, so an image survives a .kvs round trip without any
+   sidecar files — a KANVAS document stays one file, which is the whole
+   premise of the format.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const _imgCache = new Map();
+function imageFor(src) {
+  if (!src) return null;
+  let im = _imgCache.get(src);
+  if (im) return im;
+  im = new Image();
+  im.decoding = 'sync';
+  // A repaint when it lands, or the first frame after an import shows nothing
+  // and the drawing looks like it failed.
+  im.onload = () => scheduleDraw();
+  im.src = src;
+  _imgCache.set(src, im);
+  return im;
+}
+function drawImageObj(tctx, o, isLive) {
+  const im = imageFor(o.src);
+  if (!im || !im.complete || !im.naturalWidth) return;
+  const p = W2S(o.x, o.y);
+  const w = o.w * cam.zoom, h = o.h * cam.zoom;
+  tctx.save();
+  tctx.globalAlpha = (o.opacity != null ? o.opacity : 1) * (isLive ? 0.7 : 1);
+  tctx.translate(p.x, p.y);
+  // Screen Y runs down, so the anchor is the bottom-left and the bitmap is
+  // laid upward from it.
+  tctx.rotate(cam.rot - (o.rot || 0) * Math.PI/180);
+  try { tctx.drawImage(im, 0, -h, w, h); } catch (err) {}
+  tctx.restore();
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PDF — IMPORT FLOW
+   ═══════════════════════════════════════════════════════════════════════════ */
+let PDFIMP = null;             // the document being imported, while the dialog is open
+
+function openPDF() { const el = document.getElementById('pdf-file'); if (el) el.click(); }
+function onPDFFile(e) {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (f) pdfBeginImport(f);
+}
+
+async function pdfBeginImport(file) {
+  toast('Reading ' + file.name + '\u2026');
+  let lib;
+  try { lib = await loadPdfJs(); }
+  catch (err) {
+    toast('PDF support needs to download once \u00b7 check your connection');
+    return;
+  }
+  let buf;
+  try { buf = await file.arrayBuffer(); }
+  catch (err) { toast('Could not read that file'); return; }
+
+  try {
+    const task = lib.getDocument({
+      data: new Uint8Array(buf),
+      // The glyph outlines that text-as-curves depends on are only sent by the
+      // worker when font-face loading is off. Without this the Curves option
+      // would silently degrade to live text on every single file.
+      disableFontFace: true,
+      useSystemFonts: false,
+      isEvalSupported: true,
+    });
+    const doc = await task.promise;
+    const first = await doc.getPage(1);
+    const view = first.view;
+    const rot = ((first.rotate || 0) % 360 + 360) % 360;
+    let wpt = view[2] - view[0], hpt = view[3] - view[1];
+    if (rot === 90 || rot === 270) { const t = wpt; wpt = hpt; hpt = t; }
+    PDFIMP = { doc, name: file.name, pages: doc.numPages, wpt, hpt };
+    pdfShowImportDialog();
+  } catch (err) {
+    toast(/password/i.test(String(err && err.message)) ?
+      'That PDF is password protected' : 'Could not open that PDF');
+  }
+}
+
+function pdfShowImportDialog() {
+  const ov = document.getElementById('pdf-import-modal');
+  if (!ov || !PDFIMP) return;
+  const mm = v => (v * 25.4 / 72);
+  const match = matchPaper({ w: mm(PDFIMP.wpt), h: mm(PDFIMP.hpt) });
+  txt('pdfi-file', PDFIMP.name);
+  txt('pdfi-pages', PDFIMP.pages + ' page' + (PDFIMP.pages > 1 ? 's' : ''));
+  txt('pdfi-size', mm(PDFIMP.wpt).toFixed(0) + ' \u00d7 ' + mm(PDFIMP.hpt).toFixed(0) +
+                   ' mm \u00b7 nearest sheet ' + (PAPERS[match.key] || PAPERS.a4).label);
+  const r = document.getElementById('pdfi-range');
+  if (r) { r.value = ''; r.placeholder = '1-' + PDFIMP.pages; }
+  txt('pdfi-status', '');
+  ov.classList.add('on');
+}
+function closePdfImport() {
+  const ov = document.getElementById('pdf-import-modal');
+  if (ov) ov.classList.remove('on');
+  if (PDFIMP && PDFIMP.doc) { try { PDFIMP.doc.destroy(); } catch (err) {} }
+  PDFIMP = null;
+}
+// Radio behaviour without radio inputs, so the cards can be as large as a
+// thumb and still read as one exclusive choice.
+function pdfPickCard(group, value) {
+  const cards = document.querySelectorAll('[data-pdf-group="' + group + '"]');
+  for (const c of cards) c.classList.toggle('act', c.dataset.pdfValue === value);
+  const lines = document.getElementById('pdfi-lines-row');
+  if (group === 'text' && lines) lines.style.display = (value === 'lines') ? '' : 'none';
+}
+function pdfPicked(group, fallback) {
+  const el = document.querySelector('[data-pdf-group="' + group + '"].act');
+  return el ? el.dataset.pdfValue : fallback;
+}
+
+// "1-3, 7, 10-" and the empty string, which means everything.
+function parsePageRange(spec, max) {
+  const s = String(spec || '').trim();
+  if (!s) return Array.from({ length:max }, (_, i) => i + 1);
+  const set = new Set();
+  for (const part of s.split(',')) {
+    const m = /^\s*(\d+)?\s*(?:[-\u2013]\s*(\d+)?)?\s*$/.exec(part);
+    if (!m) continue;
+    if (m[2] === undefined && !/[-\u2013]/.test(part)) {
+      const n = parseInt(m[1], 10);
+      if (n >= 1 && n <= max) set.add(n);
+    } else {
+      const a = m[1] ? parseInt(m[1], 10) : 1;
+      const b = m[2] ? parseInt(m[2], 10) : max;
+      for (let i = Math.max(1, a); i <= Math.min(max, b); i++) set.add(i);
+    }
+  }
+  return [...set].sort((x, y) => x - y);
+}
+
+// Where a page lands. The nearest trim in the table, with the content scaled
+// uniformly to fit it and centred — so nothing ever falls off the sheet, and
+// a page that IS a standard size lands at exactly 1:1.
+function pdfPageBase(page, sheet) {
+  const view = page.view;
+  const rot = ((page.rotate || 0) % 360 + 360) % 360;
+  const x0 = view[0], y0 = view[1];
+  const pw = view[2] - view[0], ph = view[3] - view[1];
+
+  let R = MTX_ID, dw = pw, dh = ph;
+  if (rot === 90)       { R = mtx(0, -1, 1, 0, 0, pw); dw = ph; dh = pw; }
+  else if (rot === 180) { R = mtx(-1, 0, 0, -1, pw, ph); }
+  else if (rot === 270) { R = mtx(0, 1, -1, 0, ph, 0); dw = ph; dh = pw; }
+
+  const unitPerPt = 1 / pdfUnitScale(sheet);
+  let k = 1, offX = 0, offY = 0;
+  if (sheet) {
+    const t = paperTrim(sheet);
+    k = Math.min(t.w / (dw * unitPerPt), t.h / (dh * unitPerPt));
+    // A half-percent of slack is measurement noise, not a resize. Snapping it
+    // keeps a true A4 arriving at exactly 1:1 instead of 0.9997:1.
+    if (Math.abs(k - 1) < 0.005) k = 1;
+    offX = (t.w - dw * unitPerPt * k) / 2;
+    offY = (t.h - dh * unitPerPt * k) / 2;
+  }
+  const s = unitPerPt * k;
+  let base = mtx(1, 0, 0, 1, -x0, -y0);
+  base = mtxMul(base, R);
+  base = mtxMul(base, mtx(s, 0, 0, s, 0, 0));
+  base = mtxMul(base, mtx(1, 0, 0, 1, offX, offY));
+  return { base, k, dw: dw * unitPerPt, dh: dh * unitPerPt };
+}
+
+async function pdfCommitImport() {
+  if (!PDFIMP) return;
+  const doc = PDFIMP.doc;
+  const textMode = pdfPicked('text', 'live');
+  const place = pdfPicked('place', 'sheets');
+  const tolSel = pdfPicked('tol', 'normal');
+  const tol = tolSel === 'fine' ? 0.04 : tolSel === 'coarse' ? 0.35 : 0.12;
+  const range = parsePageRange(document.getElementById('pdfi-range').value, PDFIMP.pages);
+  if (!range.length) { txt('pdfi-status', 'That page range is empty.'); return; }
+
+  const btn = document.getElementById('pdfi-go');
+  if (btn) btn.disabled = true;
+  const report = { glyphs:0, textRuns:0, images:0, skippedImages:0,
+                   objects:0, fontFallbacks:new Set(), scaled:false, failed:0 };
+  const layerName = (nameFromFile(PDFIMP.name.replace(/\.pdf$/i, '')) || 'PDF').slice(0, 28);
+
+  ensureSheets();
+  commitSpace();
+  if (place === 'current' && mode === 'kanvas') snap();
+
+  const made = [];
+  for (let n = 0; n < range.length; n++) {
+    const pno = range[n];
+    txt('pdfi-status', 'Page ' + pno + ' of ' + PDFIMP.pages + '\u2026');
+    // Yield between pages so the status line actually repaints. Without this
+    // the whole import is one frame and the dialog looks frozen.
+    await new Promise(r => setTimeout(r, 0));
+    let objs = [];
+    let sheet = null;
+    try {
+      const page = await doc.getPage(pno);
+      const view = page.view;
+      const rot = ((page.rotate || 0) % 360 + 360) % 360;
+      let wmm = (view[2]-view[0]) * 25.4/72, hmm = (view[3]-view[1]) * 25.4/72;
+      if (rot === 90 || rot === 270) { const t = wmm; wmm = hmm; hmm = t; }
+      const match = matchPaper({ w:wmm, h:hmm });
+
+      if (place === 'current' && mode === 'kanvas') sheet = activeSheet();
+      else if (place === 'current') sheet = null;
+      else sheet = { paper: match.key, orient: match.orient };
+
+      const geom = pdfPageBase(page, mode === 'kreate' && place === 'current' ? null : sheet);
+      if (Math.abs(geom.k - 1) > 0.005) report.scaled = true;
+      const ops = await page.getOperatorList();
+      objs = pdfInterpretPage(ops, page, { base:geom.base, textMode, tol }, report);
+      try { page.cleanup(); } catch (err) {}
+    } catch (err) {
+      report.failed++;
+      continue;
+    }
+
+    report.objects += objs.length;
+    for (const o of objs) o.layer = layerName;
+
+    if (place === 'current') {
+      pdfEnsureLayer(MEM, layerName);
+      for (const o of objs) addObject(o);
+    } else {
+      const s = newSheet(sheet.paper, sheet.orient);
+      s.name = uniqueSheetName(
+        (nameFromFile(PDFIMP.name.replace(/\.pdf$/i,'')) || 'PDF') +
+        (range.length > 1 ? ' p' + pno : ''));
+      pdfEnsureLayer(s.mem, layerName);
+      for (const o of objs) { o.id = s.mem.nextId++; s.mem.objects.push(o); }
+      SHEETS.splice(sheetIdx + 1 + made.length, 0, s);
+      made.push(s);
+    }
+  }
+
+  if (made.length) {
+    sheetIdx = sheetIdx + 1;
+    if (mode !== 'kanvas') setMode('kanvas');
+  }
+  closePdfImport();
+  if (btn) btn.disabled = false;
+  applySpace();
+  zoomFit(true);
+  buildLayerList();
+  updateProps();
+  scheduleDraw();
+
+  const bits = [];
+  bits.push(report.objects + ' object' + (report.objects === 1 ? '' : 's'));
+  if (report.glyphs)   bits.push(report.glyphs + ' glyph' + (report.glyphs === 1 ? '' : 's') +
+                                 (textMode === 'lines' ? ' as lines' : ' as curves'));
+  if (report.textRuns) bits.push(report.textRuns + ' text run' + (report.textRuns === 1 ? '' : 's'));
+  if (report.images)   bits.push(report.images + ' image' + (report.images === 1 ? '' : 's'));
+  toast('Imported ' + bits.join(' \u00b7 '));
+
+  // The caveats, once, where they can be read — not buried in a toast that
+  // disappears in two seconds.
+  const notes = [];
+  if (report.failed) notes.push(report.failed + ' page(s) could not be read.');
+  if (report.fontFallbacks.size)
+    notes.push('These fonts would not give up their outlines, so their text came in as ' +
+      'editable text instead: ' + [...report.fontFallbacks].slice(0, 6).join(', ') + '.');
+  if (report.skippedImages)
+    notes.push(report.skippedImages + ' image(s) were stencil masks or could not be decoded, ' +
+      'and were left out.');
+  if (report.scaled)
+    notes.push('At least one page was not a standard trim, so it was scaled to fit the ' +
+      'nearest sheet and centred.');
+  if (notes.length) setTimeout(() => alert('Import notes\n\n\u2022 ' + notes.join('\n\n\u2022 ')), 400);
+}
+
+function pdfEnsureLayer(mem, name) {
+  if (!mem.layers.some(l => l.name === name))
+    mem.layers.push({ name, color:'#40c0d8', visible:true });
+  mem.activeLayer = name;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PDF — EXPORT FLOW
+   ═══════════════════════════════════════════════════════════════════════════ */
+function openPdfExport() {
+  const ov = document.getElementById('pdf-export-modal');
+  if (!ov) return;
+  const multi = (mode === 'kanvas' && SHEETS.length > 1);
+  const all = document.querySelector('[data-pdf-group="scope"][data-pdf-value="all"]');
+  if (all) all.style.display = multi ? '' : 'none';
+  if (!multi) pdfPickCard('scope', 'current');
+  txt('pdfe-scope-hint', mode === 'kreate'
+    ? 'KREATE has no trim, so the page is sized to the drawing plus a margin.'
+    : SHEETS.length + ' sheet' + (SHEETS.length === 1 ? '' : 's') + ' in this document.');
+  const n = rasterObjects().length;
+  const warn = document.getElementById('pdfe-raster-warn');
+  if (warn) {
+    warn.style.display = n ? '' : 'none';
+    warn.textContent = n + ' airbrush stroke' + (n === 1 ? '' : 's') +
+      ' will be embedded as a bitmap. Spray density has no path form \u2014 everything ' +
+      'else in this drawing leaves as true vector.';
+  }
+  txt('pdfe-status', '');
+  ov.classList.add('on');
+}
+function closePdfExport() {
+  const ov = document.getElementById('pdf-export-modal');
+  if (ov) ov.classList.remove('on');
+}
+
+async function pdfCommitExport() {
+  const scope = pdfPicked('scope', 'current');
+  const dpi = parseInt(pdfPicked('dpi', '300'), 10) || 300;
+  const layers = !!document.getElementById('pdfe-layers').classList.contains('act');
+  commitSpace();
+
+  const pages = [];
+  if (mode === 'kreate') pages.push({ holder: KREATE, sheet: null });
+  else if (scope === 'all') for (const s of SHEETS) pages.push({ holder: s, sheet: s });
+  else { const s = activeSheet(); if (s) pages.push({ holder: s, sheet: s }); }
+  if (!pages.length) { toast('Nothing to export'); return; }
+
+  const btn = document.getElementById('pdfe-go');
+  if (btn) btn.disabled = true;
+  txt('pdfe-status', 'Writing ' + pages.length + ' page' + (pages.length === 1 ? '' : 's') + '\u2026');
+  await new Promise(r => setTimeout(r, 0));
+
+  let bytes;
+  try {
+    bytes = await pdfBuildDocument(pages, { layers, rasterDpi: dpi });
+  } catch (err) {
+    if (btn) btn.disabled = false;
+    txt('pdfe-status', '');
+    toast('Could not write the PDF');
+    return;
+  }
+  if (btn) btn.disabled = false;
+  closePdfExport();
+
+  const arcs = pages.reduce((a, p) =>
+    a + p.holder.mem.objects.filter(o => o.type === 'arc').length, 0);
+  const name = await saveAsBlob(new Blob([bytes], { type:'application/pdf' }),
+                                docBaseName() + '.pdf', 'application/pdf');
+  if (!name) return;
+  toast('Exported ' + name + ' \u00b7 ' + pages.length + ' page' + (pages.length === 1 ? '' : 's') +
+        (arcs ? ' \u00b7 ' + arcs + ' true arc' + (arcs === 1 ? '' : 's') : ''));
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -6264,6 +8879,9 @@ function updateProps() {
     else if (o.type === 'ellipse') detail = o.rx.toFixed(1) + '\u00d7' + o.ry.toFixed(1);
     else if (o.type === 'stroke')  detail = (o.pts ? o.pts.length : 0) + ' pts';
     else if (o.type === 'text')    detail = '"' + o.text.slice(0,14) + '"';
+    else if (o.type === 'image')   detail = o.w.toFixed(1) + '\u00d7' + o.h.toFixed(1);
+    else if (o.type === 'path')    detail = (o.beziers ? o.beziers.length : 0) + ' seg' +
+                                            (o.holes && o.holes.length ? ' +' + o.holes.length + ' hole' : '');
     else if (o.type === 'dim')     detail = o.kind;
   }
   txt('s-detail', detail);
@@ -6307,25 +8925,45 @@ function toggleKbd() { document.getElementById('kbd-modal').classList.toggle('on
 // and L still means "a straight technical line", each setting both axes at
 // once. Shift plus the same key picks the input alone, for pairing an input
 // with whatever brush is already loaded.
+// V belonged to Select and now belongs exclusively to Kompass — one
+// instrument, one key, matching the drafting build. Select takes K, the key
+// Kompass vacates, so this is a straight swap: Snap keeps S, Rulers keep R,
+// and every draw preset stays where it was.
 const TOOL_KEYS = {
-  m:'rect', e:'ellipse', y:'polygon', t:'text', d:'dim-linear',
-  x:'erase', v:'select', i:'eyedrop',
+  m:'rect', e:'ellipse', y:'polygon', t:'text',
+  x:'erase', k:'select', i:'eyedrop',
 };
-const DRAW_PRESETS = {
-  b: ['freehand','ink'],
-  n: ['freehand','pencil'],
-  h: ['freehand','shade'],
-  g: ['freehand','charcoal'],
-  j: ['freehand','marker'],
-  u: ['freehand','airbrush'],
-  q: ['freehand','calligraphy'],
-  l: ['line','technical'],
-  a: ['arc','technical'],
-  c: ['circle','technical'],
-  k: ['kompass','technical'],
-  p: ['bezier','ink'],
+// D steps through the dimension family instead of naming one member of it.
+// RADIUS had a button but no key, and there is no letter left to give it —
+// all twenty-six are spoken for. Cycling is what makes every dimension
+// reachable from the keyboard without taking a letter away from something
+// else, and it means D has the same meaning here as it does in the drafting
+// build, which has three dimension types rather than two.
+const DIM_CYCLE = ['dim-linear','dim-radial'];
+function cycleDimTool() {
+  const i = DIM_CYCLE.indexOf(tool);
+  setTool(DIM_CYCLE[(i + 1) % DIM_CYCLE.length]);
+}
+// DRAW is two independent axes — how the mark is specified, and what it is
+// drawn with — so the keyboard now has one bare letter per axis and NO
+// modifier anywhere. INPUT_KEYS covers the first axis, BRUSH_KEYS the second.
+//
+// This replaces the old DRAW_PRESETS pairs, which bundled both axes onto one
+// letter and therefore had to force a brush: pressing L for a line silently
+// swapped you to Technical, and the only way to keep your own brush was
+// Shift+L. Splitting them means a letter changes exactly one thing and the
+// shift variant is no longer needed for anything.
+//
+// Every brush now has a working bare letter, including three that previously
+// had none at all: Technical was reachable only as a side-effect of the line
+// and arc presets, Ink only via B (which is also the freehand INPUT key), and
+// Charcoal sat on G, which the grid toggle intercepts several lines earlier
+// and has always shadowed.
+const BRUSH_KEYS = {
+  z:'ink',       w:'technical',  q:'calligraphy', n:'pencil',
+  o:'charcoal',  h:'shade',      j:'marker',      u:'airbrush',
 };
-const INPUT_KEYS = { b:'freehand', l:'line', a:'arc', c:'circle', k:'kompass', p:'bezier' };
+const INPUT_KEYS = { b:'freehand', l:'line', a:'arc', c:'circle', v:'kompass', p:'bezier' };
 
 document.addEventListener('keydown', e => {
   const el = document.activeElement;
@@ -6340,7 +8978,10 @@ document.addEventListener('keydown', e => {
     if (k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if (k === 'y') { e.preventDefault(); redo(); return; }
     if (k === 's') { e.preventDefault(); saveKVS(); return; }
-    if (k === 'o') { e.preventDefault(); openKVS(); return; }
+    // Ctrl+P is the print key everywhere, and here printing IS the PDF — the
+    // export dialog carries Print as one of its buttons.
+    if (k === 'p') { e.preventDefault(); openPdfExport(); return; }
+    if (k === 'o') { e.preventDefault(); e.shiftKey ? openPDF() : openKVS(); return; }
     if (k === 'r' && e.shiftKey) { e.preventDefault(); rotateSheet(true); return; }
     if (e.key === 'Enter') { e.preventDefault(); openPaperPicker(true); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); nextSheet(1); return; }
@@ -6349,7 +8990,8 @@ document.addEventListener('keydown', e => {
   }
 
   if (e.key === 'Escape')  { cancelPending(); selectedIds.clear();
-                             closePaperPicker(); document.getElementById('kbd-modal').classList.remove('on');
+                             closePaperPicker(); closePdfImport(); closePdfExport();
+                             document.getElementById('kbd-modal').classList.remove('on');
                              updateProps(); scheduleDraw(); return; }
   // Plain Enter — the keyboard equivalent of double-tap / COMMIT: locks the
   // radius or finalizes the sweep, whichever the current phase calls for.
@@ -6360,19 +9002,38 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Tab')     { e.preventDefault(); setMode(mode === 'kanvas' ? 'kreate' : 'kanvas'); return; }
   if (e.key === '?')       { toggleKbd(); return; }
 
+  // KOMPASS typed override. While a compass sequence is open, a digit belongs
+  // to the SPAN — it is the field being aimed. Intercepted ahead of the
+  // shortcut map so "type a number to set the radius" works without the user
+  // first having to reach for anything. Note this must sit BEFORE the '0'
+  // view-reset below, or 0 would straighten the view mid-measurement.
+  if (/^[0-9.]$/.test(e.key) && typeof kompassBoxLive === 'function' && kompassBoxLive()) {
+    const fid = kompassActiveFieldId();
+    const fEl = fid && document.getElementById(fid);
+    if (fEl) {
+      e.preventDefault();
+      showKompassRBox();
+      kompassSeeding = true;        // set BEFORE focus, read by the focus handler
+      fEl.focus();
+      fEl.value = (e.key === '.') ? '0.' : e.key;
+      // Fire input so the lock engages on the FIRST keystroke, not the second.
+      fEl.dispatchEvent(new Event('input', { bubbles:true }));
+      return;
+    }
+  }
+
   const k = e.key.toLowerCase();
   if (e.key === '0') { resetViewRot(); return; }
   if (k === 'f') { zoomFit(); return; }
   if (k === 'g') { toggleGrid(); return; }
   if (k === 's') { toggleSnap(); return; }
   if (k === 'r') { toggleRulers(); return; }
-  // Shift picks the input alone, keeping the brush you already have.
-  if (e.shiftKey && INPUT_KEYS[k]) { setInput(INPUT_KEYS[k]); return; }
-  if (DRAW_PRESETS[k]) {
-    const [i2, b2] = DRAW_PRESETS[k];
-    setTool('draw'); setInput(i2); setBrush(b2);
-    return;
-  }
+  // Bare letters throughout — no modifier is required for any tool, input or
+  // brush. Inputs are tested before brushes, and both before tools, so the
+  // six input letters always mean the input.
+  if (k === 'd') { cycleDimTool(); return; }
+  if (INPUT_KEYS[k]) { setInput(INPUT_KEYS[k]); return; }
+  if (BRUSH_KEYS[k]) { setBrush(BRUSH_KEYS[k]); return; }
   if (TOOL_KEYS[k]) { setTool(TOOL_KEYS[k]); return; }
   if (k === '[') { B.size = Math.max(1, B.size-2);
                    document.getElementById('sl-size').value = B.size; syncBrush(); return; }
