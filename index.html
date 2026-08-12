@@ -1012,11 +1012,11 @@ kbd {
     </div>
 
     <div class="modeswitch">
-      <button class="mode-btn kv" onclick="setMode('kanvas')" title="KANVAS — bounded sheets (K)">
-        <span class="mb-mark">KV</span>KANVAS
-      </button>
       <button class="mode-btn kt" onclick="setMode('kreate')" title="KREATE — infinite space (K)">
         <span class="mb-mark">KT</span>KREATE
+      </button>
+      <button class="mode-btn kv" onclick="setMode('kanvas')" title="KANVAS — bounded sheets (K)">
+        <span class="mb-mark">KV</span>KANVAS
       </button>
     </div>
 
@@ -1124,10 +1124,10 @@ kbd {
           <div class="mrow" id="m-rulers" onclick="menuDo(toggleRulers)">
             <span class="mc">&#10003;</span><span>Rulers</span><span class="mk">R</span></div>
           <div class="mlabel">Space</div>
-          <div class="mrow" id="m-kanvas" onclick="menuDo(() => setMode('kanvas'))">
-            <span class="mc">&#10003;</span><span>KANVAS &#183; sheets</span><span class="mk">Tab</span></div>
           <div class="mrow" id="m-kreate" onclick="menuDo(() => setMode('kreate'))">
             <span class="mc">&#10003;</span><span>KREATE &#183; infinite</span><span class="mk">Tab</span></div>
+          <div class="mrow" id="m-kanvas" onclick="menuDo(() => setMode('kanvas'))">
+            <span class="mc">&#10003;</span><span>KANVAS &#183; sheets</span><span class="mk">Tab</span></div>
           <div class="msep"></div>
           <div class="mrow" onclick="menuDo(toggleKbd)">
             <span class="mc">&#10003;</span><span>Keyboard Shortcuts</span><span class="mk">?</span></div>
@@ -6978,6 +6978,10 @@ function normaliseMem(src) {
     // Weld symbols have no tool here; they are kept verbatim so a round trip
     // back to KAD does not silently drop them.
     for (const w of (src.welds   || [])) out.push(Object.assign({}, w, { type:'weld' }));
+    // KAD's pen tool writes the same cubic-segment shape this build's own
+    // path objects use ({x0,y0,cx1,cy1,cx2,cy2,x3,y3} per beziers entry), so
+    // this is a straight carry-through — no field translation needed.
+    for (const p of (src.paths   || [])) out.push(Object.assign({}, p, { type:'path' }));
     m.objects = out;
   }
   // Opaque to this build, meaningful to KAD. Preserved rather than dropped:
