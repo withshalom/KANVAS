@@ -1063,6 +1063,9 @@ kbd {
           <div class="mrow" id="m-del" onclick="menuDo(deleteSelected)">
             <span class="mc">&#10003;</span><span>Delete Selected</span><span class="mk">Del</span></div>
           <div class="msep"></div>
+          <div class="mrow" id="m-tocurves" onclick="menuDo(convertSelectionToCurves)">
+            <span class="mc">&#10003;</span><span>Convert to Curves</span><span class="mk"></span></div>
+          <div class="msep"></div>
           <div class="mrow" id="m-rccw" onclick="menuDo(() => nudgeSelectionRotate(-15))">
             <span class="mc">&#10003;</span><span>Rotate 15&deg; &#8634;</span><span class="mk"></span></div>
           <div class="mrow" id="m-rcw" onclick="menuDo(() => nudgeSelectionRotate(15))">
@@ -1222,6 +1225,10 @@ kbd {
       <button class="tbtn" data-tool="select" onclick="setTool('select')" title="Select (K)">
         <svg viewBox="0 0 24 24"><path d="m5 3 14 9-7 1-4 7z"/></svg>
         <span class="tl">SELECT</span>
+      </button>
+      <button class="tbtn" data-tool="node" onclick="setTool('node')" title="Node Edit \u2014 select a curve first">
+        <svg viewBox="0 0 24 24"><path d="M4 18c0-8 8-8 16-14"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="4" r="2"/></svg>
+        <span class="tl">NODE</span>
       </button>
     </div>
 
@@ -1528,6 +1535,20 @@ kbd {
   <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
 </button>
 <div id="sel-count"></div>
+
+<!-- Right-click shortcut menu for the canvas (desktop/mouse). Reuses the
+     same .mdrop/.mrow visuals as the menu bar; positioned at the pointer by
+     JS in openCtxMenu(). Touch's existing long-press already opens the tool
+     drawer, so this menu is not wired to it \u2014 avoids a gesture collision. -->
+<div class="mdrop" id="ctx-menu" style="z-index:410;">
+  <div class="mrow" id="ctx-tocurves" onclick="ctxDo(convertSelectionToCurves)">
+    <span class="mc">&#10003;</span><span>Convert to Curves</span><span class="mk"></span></div>
+  <div class="msep"></div>
+  <div class="mrow" id="ctx-del" onclick="ctxDo(deleteSelected)">
+    <span class="mc">&#10003;</span><span>Delete</span><span class="mk">Del</span></div>
+  <div class="mrow" id="ctx-deselect" onclick="ctxDo(clearSelection)">
+    <span class="mc">&#10003;</span><span>Deselect</span><span class="mk">Esc</span></div>
+</div>
 
 <!-- Touch "Enter" for a Kompass tap sequence — locks the radius, or
      finalizes the sweep, whichever the current phase calls for. Shown by
@@ -3403,6 +3424,151 @@ function arcPoint(a, t) {
   return { x: a.cx + Math.cos(ang)*a.r, y: a.cy + Math.sin(ang)*a.r };
 }
 
+/* ── ARC EDIT HANDLES ────────────────────────────────────────────────────
+   Three draggable points on a selected arc, in the same spirit as the
+   rotate handle: start angle, end angle, radius \u2014 no mode switch needed,
+   they just appear whenever a lone arc is selected with the Select tool.
+   Dragging start/end changes only the angle (radius fixed); dragging the
+   radius handle changes only r (angles fixed). Full circles (kompass /
+   circle-tool output) still show all three \u2014 dragging start or end turns
+   them into a partial arc, which is the honest way to make a pie slice.
+   ─────────────────────────────────────────────────────────────────────── */
+function arcHandlesFor(id) {
+  const o = MEM.objects.find(x => x.id === id);
+  if (!o || o.type !== 'arc') return null;
+  return {
+    o,
+    start: { x:o.cx + Math.cos(o.a0)*o.r, y:o.cy + Math.sin(o.a0)*o.r },
+    end:   { x:o.cx + Math.cos(o.a1)*o.r, y:o.cy + Math.sin(o.a1)*o.r },
+    mid:   arcPoint(o, 0.5),
+  };
+}
+
+/* ── PATH NODE HELPERS ───────────────────────────────────────────────────
+   A `path` object is a chain of cubic segments where consecutive segments
+   share an anchor (segment i's x3,y3 IS segment i+1's x0,y0). pathNodes()
+   turns that chain into a flat node list, each node knowing which segment
+   (if any) supplies its incoming and outgoing handle \u2014 open paths have
+   dangling ends, closed paths wrap the last node back to the first.
+   ─────────────────────────────────────────────────────────────────────── */
+function pathNodes(o) {
+  const bz = o.beziers, n = bz && bz.length;
+  if (!n) return [];
+  const out = [];
+  if (o.closed) {
+    for (let i = 0; i < n; i++) out.push({ x:bz[i].x0, y:bz[i].y0, segIn:(i-1+n)%n, segOut:i });
+  } else {
+    out.push({ x:bz[0].x0, y:bz[0].y0, segIn:-1, segOut:0 });
+    for (let i = 1; i < n; i++) out.push({ x:bz[i].x0, y:bz[i].y0, segIn:i-1, segOut:i });
+    out.push({ x:bz[n-1].x3, y:bz[n-1].y3, segIn:n-1, segOut:-1 });
+  }
+  return out;
+}
+// Moving a node translates it AND its two attached handles by the same
+// delta \u2014 preserves the local curve shape rather than leaving the handles
+// behind, which is the behaviour every Bezier editor defaults to for a
+// plain anchor drag (as opposed to Alt-dragging just the anchor).
+function moveNode(o, idx, nx, ny) {
+  const nodes = pathNodes(o);
+  const nd = nodes[idx]; if (!nd) return;
+  const dx = nx - nd.x, dy = ny - nd.y;
+  if (nd.segOut !== -1) { const b = o.beziers[nd.segOut]; b.x0 += dx; b.y0 += dy; b.cx1 += dx; b.cy1 += dy; }
+  if (nd.segIn  !== -1) { const b = o.beziers[nd.segIn];  b.x3 += dx; b.y3 += dy; b.cx2 += dx; b.cy2 += dy; }
+}
+// A handle moves independently of its anchor \u2014 a cusp/corner node by
+// default. Smooth/symmetric handle mirroring is a natural follow-on, not
+// implemented yet.
+function moveHandle(o, segIdx, which, nx, ny) {
+  const b = o.beziers[segIdx]; if (!b) return;
+  if (which === 'cx1') { b.cx1 = nx; b.cy1 = ny; } else { b.cx2 = nx; b.cy2 = ny; }
+}
+// Exact De Casteljau split: the two resulting cubics together trace
+// precisely the same curve the single original one did, at any t.
+function splitBezierSeg(b, t) {
+  const lerp = (p,q,k) => ({ x:p.x+(q.x-p.x)*k, y:p.y+(q.y-p.y)*k });
+  const P0={x:b.x0,y:b.y0}, P1={x:b.cx1,y:b.cy1}, P2={x:b.cx2,y:b.cy2}, P3={x:b.x3,y:b.y3};
+  const A=lerp(P0,P1,t), B=lerp(P1,P2,t), C=lerp(P2,P3,t);
+  const D=lerp(A,B,t), E=lerp(B,C,t), F=lerp(D,E,t);
+  return [
+    { x0:P0.x,y0:P0.y, cx1:A.x,cy1:A.y, cx2:D.x,cy2:D.y, x3:F.x,y3:F.y },
+    { x0:F.x,y0:F.y,   cx1:E.x,cy1:E.y, cx2:C.x,cy2:C.y, x3:P3.x,y3:P3.y },
+  ];
+}
+function insertNodeOnSegment(o, segIdx, t) {
+  snap();
+  const tt = Math.max(0.02, Math.min(0.98, t));
+  o.beziers.splice(segIdx, 1, ...splitBezierSeg(o.beziers[segIdx], tt));
+  updateProps(); scheduleDraw();
+  toast('Node added');
+}
+// Deleting the first/last node of an open path just drops the end segment.
+// A middle node merges its two adjacent segments into one \u2014 not a
+// curvature-exact merge (that's not a well-posed problem in general), but a
+// clean, predictable one: the surviving segment keeps the outer two handles
+// and spans straight across to the next anchor. Closed curves are excluded
+// for now \u2014 the wrap-around case needs its own care and isn't worth
+// rushing.
+function deleteSelectedNode() {
+  if (tool !== 'node' || selectedNodeIdx < 0) return false;
+  const o = MEM.objects.find(x => x.id === editingPathId);
+  if (!o) return false;
+  const nodes = pathNodes(o);
+  if (nodes.length <= 2) { toast('A curve needs at least two nodes'); return true; }
+  if (o.closed) { toast('Deleting nodes on closed curves isn\u2019t supported yet'); return true; }
+  snap();
+  const idx = selectedNodeIdx;
+  if (idx === 0) o.beziers.shift();
+  else if (idx === nodes.length - 1) o.beziers.pop();
+  else {
+    const a = o.beziers[idx-1], b = o.beziers[idx];
+    o.beziers.splice(idx-1, 2, { x0:a.x0,y0:a.y0, cx1:a.cx1,cy1:a.cy1, cx2:b.cx2,cy2:b.cy2, x3:b.x3,y3:b.y3 });
+  }
+  selectedNodeIdx = -1;
+  rebuildEraseCanvas(); updateProps(); scheduleDraw();
+  toast('Node deleted');
+  return true;
+}
+// Hit-test against the currently-edited path's nodes and handles, in screen
+// space \u2014 tolerance is a fixed pixel radius, not world units, so it stays
+// easy to grab at any zoom.
+function nodeHitTest(sPt) {
+  const o = MEM.objects.find(x => x.id === editingPathId);
+  if (!o) return null;
+  const tol = 10;
+  const nodes = pathNodes(o);
+  for (let i = 0; i < nodes.length; i++) {
+    const p = W2S(nodes[i].x, nodes[i].y);
+    if (Math.hypot(sPt.x-p.x, sPt.y-p.y) <= tol) return { kind:'anchor', nodeIdx:i };
+  }
+  for (let i = 0; i < o.beziers.length; i++) {
+    const b = o.beziers[i];
+    const h1 = W2S(b.cx1,b.cy1), h2 = W2S(b.cx2,b.cy2);
+    if (Math.hypot(sPt.x-h1.x, sPt.y-h1.y) <= tol) return { kind:'handle', segIdx:i, which:'cx1' };
+    if (Math.hypot(sPt.x-h2.x, sPt.y-h2.y) <= tol) return { kind:'handle', segIdx:i, which:'cx2' };
+  }
+  return null;
+}
+// Nearest point ON the curve to a world coordinate, sampled rather than
+// solved in closed form \u2014 plenty accurate for "where did you double-click",
+// which is the only thing that calls this.
+function nodeCurveHit(w) {
+  const o = MEM.objects.find(x => x.id === editingPathId);
+  if (!o) return null;
+  let best = null;
+  const SAMPLES = 24;
+  for (let i = 0; i < o.beziers.length; i++) {
+    const b = o.beziers[i];
+    for (let j = 0; j <= SAMPLES; j++) {
+      const t = j / SAMPLES;
+      const p = evalBez(b, t);
+      const d = Math.hypot(p.x-w.x, p.y-w.y);
+      if (!best || d < best.d) best = { segIdx:i, t, d };
+    }
+  }
+  const tolWorld = 8 / cam.zoom;
+  return (best && best.d <= tolWorld) ? best : null;
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
    GRID / SNAP / TOOL STATE
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -3426,6 +3592,15 @@ let cursorSeen = false;
 let selectedIds = new Set();
 // Live rotation drag. null when nothing is being rotated.
 let rotateDrag = null;
+// Node-edit tool state: which path is being edited, which node is
+// highlighted, and the live anchor/handle drag (if any). All null/-1 when
+// not in node-edit mode.
+let editingPathId = null;
+let selectedNodeIdx = -1;
+let nodeDrag = null;
+// Live arc-handle drag (start angle / end angle / radius), grabbed straight
+// off a selected arc the same way the rotate handle is grabbed.
+let arcHandleDrag = null;
 const ROTATE_HANDLE_OFFSET = 34;   // px, screen space, handle above the box
 const ROTATE_HANDLE_R = 10;
 // Geometry with a genuine notion of "the same shape, turned". Rect and
@@ -3791,6 +3966,27 @@ function setBrush(bn) {
 
 function setTool(t) {
   if (mode === 'kreate' && t.startsWith('dim-')) { toast('Dimensions live on sheets'); return; }
+  if (t === 'node') {
+    // Node Edit has no toolbar slot of its own to click into blind \u2014 it
+    // needs a single curve already selected (from a toolbar button, a
+    // double-click on a curve, or the Edit menu), the same way the arc
+    // handles need an arc already selected.
+    const only = (selectedIds.size === 1) ? MEM.objects.find(o => selectedIds.has(o.id)) : null;
+    if (!only || only.type !== 'path') { toast('Select one curve to edit its nodes'); return; }
+    tool = 'node'; editingPathId = only.id; selectedNodeIdx = -1; nodeDrag = null;
+    cancelPending();
+    document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('act', b.dataset.tool === 'node'));
+    ['draw','shape','erase','text','dim'].forEach(p => {
+      const el = document.getElementById('panel-'+p);
+      if (el) el.style.display = 'none';
+    });
+    const rs = document.getElementById('row-sides'); if (rs) rs.style.display = 'none';
+    txt('tool-hint', 'Node Edit'); txt('sb-tool', 'NODE EDIT');
+    updateCursor(); scheduleDraw();
+    toast('Drag anchors and handles \u00b7 double-click to add/remove a node \u00b7 Esc when done');
+    return;
+  }
+  if (tool === 'node' && t !== 'node') { editingPathId = null; selectedNodeIdx = -1; nodeDrag = null; }
   // Selection is exclusive to Select. Leaving the tool is the clearest
   // statement that you are done with the selection, and keeping it would
   // leave marquee handles floating over unrelated work.
@@ -3826,7 +4022,7 @@ function cancelPending() {
 }
 function updateCursor() {
   canvas.style.cursor = spaceDown || isPanning ? 'grabbing'
-    : tool === 'select' ? 'default'
+    : (tool === 'select' || tool === 'node') ? 'default'
     : tool === 'text'   ? 'text'
     : (tool === 'erase' || (tool === 'draw' && input === 'freehand')) ? 'none'
     : 'crosshair';
@@ -3865,7 +4061,23 @@ canvas.addEventListener('pointerleave', () => {
 canvas.addEventListener('pointerenter', updateBrushCursor);
 canvas.addEventListener('dblclick', onDbl);
 canvas.addEventListener('wheel', onWheel, { passive:false });
-canvas.addEventListener('contextmenu', e => { e.preventDefault(); cancelPending(); scheduleDraw(); });
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  cancelPending();
+  // Right-clicking a shape selects it (unless it's already part of a
+  // multi-selection \u2014 in which case the whole selection is kept, so the
+  // menu's Delete/Convert acts on all of it). Right-clicking empty canvas
+  // just opens the menu against whatever was already selected, if anything.
+  if (tool === 'select') {
+    const s = spt(e);
+    const w = S2W(s.x, s.y);
+    const hit = objNear(w);
+    if (hit && !selectedIds.has(hit.id)) selectNear(w, false);
+    updateProps(); updateSelFabs();
+  }
+  scheduleDraw();
+  openCtxMenu(e.clientX, e.clientY);
+});
 
 // Live touch contacts, tracked here rather than read off the touch events, so
 // arbitration never depends on whether pointerdown or touchstart fires first
@@ -3998,6 +4210,26 @@ function onDown(e) {
     }
   }
 
+  // Arc handles: start-angle, end-angle, radius. Same pre-emption rule as
+  // the rotate handle just above — grabbing one of these IS the gesture.
+  if (tool === 'select' && selectedIds.size === 1) {
+    const ah = arcHandlesFor([...selectedIds][0]);
+    if (ah) {
+      const hitR = 9;
+      let which = null;
+      const ps = W2S(ah.start.x, ah.start.y), pe = W2S(ah.end.x, ah.end.y), pr = W2S(ah.mid.x, ah.mid.y);
+      if (Math.hypot(s.x-ps.x, s.y-ps.y) <= hitR) which = 'start';
+      else if (Math.hypot(s.x-pe.x, s.y-pe.y) <= hitR) which = 'end';
+      else if (Math.hypot(s.x-pr.x, s.y-pr.y) <= hitR) which = 'radius';
+      if (which) {
+        cancelHold(); snap();
+        arcHandleDrag = { id: ah.o.id, which };
+        scheduleDraw();
+        return;
+      }
+    }
+  }
+
   const sp = snapPt(w.x, w.y);
 
   switch (tool) {
@@ -4086,6 +4318,17 @@ function onDown(e) {
       selBox.sx = s.x; selBox.sy = s.y; selBox.wx = w.x; selBox.wy = w.y;
       break;
     }
+    case 'node': {
+      const hit = nodeHitTest(s);
+      if (hit) {
+        cancelHold(); snap();
+        nodeDrag = hit;
+        if (hit.kind === 'anchor') selectedNodeIdx = hit.nodeIdx;
+      } else {
+        selectedNodeIdx = -1;
+      }
+      break;
+    }
     case 'eyedrop': { pickFromCanvas(s); setTool('brush'); break; }
   }
   scheduleDraw();
@@ -4121,6 +4364,30 @@ function onMove(e) {
   moveBrushCursor(s.x, s.y);
   cursorSeen = true;
   txt('sb-x', w.x.toFixed(1)); txt('sb-y', w.y.toFixed(1));
+
+  if (nodeDrag) {
+    const o = MEM.objects.find(x => x.id === editingPathId);
+    if (o) {
+      if (nodeDrag.kind === 'anchor') moveNode(o, nodeDrag.nodeIdx, w.x, w.y);
+      else moveHandle(o, nodeDrag.segIdx, nodeDrag.which, w.x, w.y);
+    }
+    scheduleDraw();
+    return;
+  }
+
+  if (arcHandleDrag) {
+    const o = MEM.objects.find(x => x.id === arcHandleDrag.id);
+    if (o) {
+      if (arcHandleDrag.which === 'radius') {
+        o.r = Math.max(0.01, Math.hypot(w.x - o.cx, w.y - o.cy));
+      } else {
+        const ang = Math.atan2(w.y - o.cy, w.x - o.cx);
+        if (arcHandleDrag.which === 'start') o.a0 = ang; else o.a1 = ang;
+      }
+    }
+    scheduleDraw();
+    return;
+  }
 
   if (rotateDrag) {
     let delta = Math.atan2(w.y - rotateDrag.pivot.y, w.x - rotateDrag.pivot.x)
@@ -4181,6 +4448,18 @@ function onMove(e) {
 
 function onUp(e) {
   cancelHold();
+  if (nodeDrag) {
+    nodeDrag = null;
+    updateProps();
+    if (e.pointerType === 'touch') touchIds.delete(e.pointerId);
+    return;
+  }
+  if (arcHandleDrag) {
+    arcHandleDrag = null;
+    rebuildEraseCanvas(); updateProps();
+    if (e.pointerType === 'touch') touchIds.delete(e.pointerId);
+    return;
+  }
   if (rotateDrag) {
     const rd = rotateDrag; rotateDrag = null;
     const objs = rd.ids.map(id => MEM.objects.find(o => o.id === id)).filter(Boolean);
@@ -4270,6 +4549,27 @@ function onDbl(e) {
   if (tool === 'draw' && input === 'bezier' && penAnchors.length >= 2) commitPen();
   else if (tool === 'polygon' || (tool === 'draw' && input === 'arc')) {
     cancelPending(); scheduleDraw();
+  } else if (tool === 'select') {
+    // Double-clicking a curve is the CorelDRAW-standard way into node
+    // editing \u2014 no keyboard shortcut needed, and none was free (see
+    // TOOL_KEYS above: all 26 letters are already spoken for).
+    const s = spt(e); const w = S2W(s.x, s.y);
+    const hit = objNear(w);
+    if (hit && hit.type === 'path') { selectedIds.clear(); selectedIds.add(hit.id); setTool('node'); }
+  } else if (tool === 'node') {
+    const s = spt(e);
+    const onNode = nodeHitTest(s);
+    if (onNode && onNode.kind === 'anchor') {
+      selectedNodeIdx = onNode.nodeIdx;
+      deleteSelectedNode();
+    } else {
+      const w = S2W(s.x, s.y);
+      const onCurve = nodeCurveHit(w);
+      if (onCurve) {
+        const o = MEM.objects.find(x => x.id === editingPathId);
+        if (o) insertNodeOnSegment(o, onCurve.segIdx, onCurve.t);
+      }
+    }
   }
 }
 
@@ -4955,6 +5255,33 @@ function deleteSelected() {
   rebuildEraseCanvas(); updateProps(); updateSelFabs(); scheduleDraw();
   toast('Deleted ' + n + ' object' + (n > 1 ? 's' : ''));
 }
+// ── ARC \u2192 CURVES ─────────────────────────────────────────────────────────
+// KANVAS keeps true arcs as a first-class primitive {cx,cy,r,a0,a1,ccw} \u2014
+// precise, and cheap to edit parametrically (radius, sweep). But sometimes
+// what's wanted is a freeform Bezier: pushable nodes and handles, no
+// centre/radius constraint. This is a one-way, explicit conversion \u2014 never
+// implicit \u2014 so a drafted arc stays a true arc until you ask otherwise.
+// Reuses arcToBeziers(), the same 45\u00b0-segment fit the PDF writer uses, so a
+// converted arc and an exported one trace an identical curve.
+function selectionHasArc() {
+  for (const o of MEM.objects) if (selectedIds.has(o.id) && o.type === 'arc') return true;
+  return false;
+}
+function convertSelectionToCurves() {
+  const targets = MEM.objects.filter(o => selectedIds.has(o.id) && o.type === 'arc');
+  if (!targets.length) { toast('Select an arc to convert'); return; }
+  snap();
+  for (const o of targets) {
+    const beziers = arcToBeziers(o);
+    const closed = arcSweep(o) >= Math.PI*2 - 1e-9;
+    delete o.cx; delete o.cy; delete o.r; delete o.a0; delete o.a1; delete o.ccw; delete o.full;
+    o.type = 'path';
+    o.beziers = beziers;
+    o.closed = closed;
+  }
+  rebuildEraseCanvas(); updateProps(); updateSelFabs(); scheduleDraw();
+  toast(targets.length + ' arc' + (targets.length > 1 ? 's' : '') + ' converted to curves');
+}
 function eraseObjectAt(w) {
   const o = objNear(w, 12);
   if (!o) return;
@@ -5300,6 +5627,7 @@ function render() {
 
   drawLive();
   drawSelection();
+  drawNodeEdit();
   drawRulers();
   commitCam();
   updateCenterFab();
@@ -6208,6 +6536,74 @@ function drawSelection() {
   }
   drawSelBox();
   drawRotateHandle();
+  drawArcHandles();
+}
+
+// Three draggable points on a lone selected arc \u2014 amber, matching the
+// Kompass rig's colour, since both are "true CAD geometry" affordances
+// rather than the teal used for the generic rotate handle.
+function drawArcHandles() {
+  if (tool !== 'select' || selBox.active || selBox.pending) return;
+  if (selectedIds.size !== 1) return;
+  const ah = arcHandlesFor([...selectedIds][0]);
+  if (!ah) return;
+  const OA = 'rgba(200,148,60,';
+  const c = W2S(ah.o.cx, ah.o.cy);
+  const ps = W2S(ah.start.x, ah.start.y), pe = W2S(ah.end.x, ah.end.y), pr = W2S(ah.mid.x, ah.mid.y);
+  ctx.save();
+  ctx.strokeStyle = OA+'0.45)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(pr.x,pr.y); ctx.stroke();
+  ctx.setLineDash([]);
+  const dot = (p, active) => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 6.5, 0, Math.PI*2);
+    ctx.fillStyle = active ? OA+'1)' : 'rgba(4,5,10,0.92)'; ctx.fill();
+    ctx.strokeStyle = OA+'1)'; ctx.lineWidth = 1.5; ctx.stroke();
+  };
+  dot(ps, arcHandleDrag && arcHandleDrag.which === 'start');
+  dot(pe, arcHandleDrag && arcHandleDrag.which === 'end');
+  // Radius handle is a small diamond, not a dot, so it never gets mistaken
+  // for a third angle endpoint.
+  ctx.save();
+  ctx.translate(pr.x, pr.y); ctx.rotate(Math.PI/4);
+  ctx.beginPath(); ctx.rect(-5,-5,10,10);
+  ctx.fillStyle = (arcHandleDrag && arcHandleDrag.which === 'radius') ? OA+'1)' : 'rgba(4,5,10,0.92)';
+  ctx.fill(); ctx.strokeStyle = OA+'1)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Node-edit overlay: every anchor as a small square, every control handle
+// as a small dot on a thin leash back to its anchor \u2014 the standard Bezier
+// editor vocabulary (corner squares, round handles).
+function drawNodeEdit() {
+  if (tool !== 'node') return;
+  const o = MEM.objects.find(x => x.id === editingPathId);
+  if (!o || !o.beziers) return;
+  const AC = 'rgba(0,255,163,';   // --green, reserved for "you can edit this"
+  ctx.save();
+  for (let i = 0; i < o.beziers.length; i++) {
+    const b = o.beziers[i];
+    const p0 = W2S(b.x0,b.y0), c1 = W2S(b.cx1,b.cy1), c2 = W2S(b.cx2,b.cy2), p3 = W2S(b.x3,b.y3);
+    ctx.strokeStyle = AC+'0.4)'; ctx.lineWidth = 1; ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(c1.x,c1.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p3.x,p3.y); ctx.lineTo(c2.x,c2.y); ctx.stroke();
+    ctx.setLineDash([]);
+    for (const [h, which] of [[c1,'cx1'],[c2,'cx2']]) {
+      const active = nodeDrag && nodeDrag.kind === 'handle' && nodeDrag.segIdx === i && nodeDrag.which === which;
+      ctx.beginPath(); ctx.arc(h.x, h.y, 4.5, 0, Math.PI*2);
+      ctx.fillStyle = active ? AC+'1)' : 'rgba(4,5,10,0.92)';
+      ctx.fill(); ctx.strokeStyle = AC+'0.9)'; ctx.lineWidth = 1.3; ctx.stroke();
+    }
+  }
+  const nodes = pathNodes(o);
+  for (let i = 0; i < nodes.length; i++) {
+    const p = W2S(nodes[i].x, nodes[i].y);
+    const active = (i === selectedNodeIdx) || (nodeDrag && nodeDrag.kind === 'anchor' && nodeDrag.nodeIdx === i);
+    ctx.beginPath(); ctx.rect(p.x-4.5, p.y-4.5, 9, 9);
+    ctx.fillStyle = active ? AC+'1)' : 'rgba(4,5,10,0.92)';
+    ctx.fill(); ctx.strokeStyle = AC+'1)'; ctx.lineWidth = 1.6; ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // Where the handle sits: above the top-centre of the selection box, offset by
@@ -7278,6 +7674,49 @@ function menuDo(fn) {
   try { fn(); } catch (err) { toast('That did not work'); }
 }
 
+/* ── CANVAS CONTEXT MENU ─────────────────────────────────────────────────
+   Right-click on the canvas while Select is active. Reuses the menu bar's
+   row styling; state (which rows are live) is computed fresh on every open,
+   the same principle as syncMenus() above.
+   ─────────────────────────────────────────────────────────────────────── */
+let ctxMenuOpen = false;
+function ctxDo(fn) {
+  closeCtxMenu();
+  try { fn(); } catch (err) { toast('That did not work'); }
+}
+function openCtxMenu(clientX, clientY) {
+  const el = document.getElementById('ctx-menu');
+  if (!el) return;
+  const dis = (id, off) => {
+    const row = document.getElementById(id);
+    if (row) row.classList.toggle('off', !!off);
+  };
+  const nSel = selectedIds.size;
+  dis('ctx-tocurves', !selectionHasArc());
+  dis('ctx-del',      !nSel);
+  dis('ctx-deselect', !nSel);
+  el.classList.add('on');
+  // Measure after showing, then clamp so the menu never opens off-screen \u2014
+  // the same off-by-a-frame trick every fixed-position panel here needs.
+  const w = el.offsetWidth || 232, h = el.offsetHeight || 140;
+  const x = Math.min(clientX, window.innerWidth  - w - 8);
+  const y = Math.min(clientY, window.innerHeight - h - 8);
+  el.style.left = Math.max(4, x) + 'px';
+  el.style.top  = Math.max(4, y) + 'px';
+  ctxMenuOpen = true;
+}
+function closeCtxMenu() {
+  if (!ctxMenuOpen) return;
+  const el = document.getElementById('ctx-menu');
+  if (el) el.classList.remove('on');
+  ctxMenuOpen = false;
+}
+document.addEventListener('click', e => {
+  if (ctxMenuOpen && !e.target.closest('#ctx-menu')) closeCtxMenu();
+});
+window.addEventListener('resize', closeCtxMenu);
+window.addEventListener('blur', closeCtxMenu);
+
 /* ── State ────────────────────────────────────────────────────────────────
    Ticks and greyed-out rows are computed in one place, immediately before the
    panel is shown. Pushing state INTO the menu from every toggle would mean
@@ -7298,6 +7737,7 @@ function syncMenus() {
   dis('m-redo', !HIST || !HIST.r.length);
   const nSel = selectedIds.size;
   dis('m-del',  !nSel);
+  dis('m-tocurves', !selectionHasArc());
   dis('m-rccw', !nSel);
   dis('m-rcw',  !nSel);
 
@@ -9293,17 +9733,23 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  if (e.key === 'Escape')  { cancelPending(); selectedIds.clear();
-                             closeMenus(); closePaperPicker();
-                             closePdfImport(); closePdfExport();
-                             document.getElementById('kbd-modal').classList.remove('on');
-                             updateProps(); scheduleDraw(); return; }
+  if (e.key === 'Escape') {
+    if (tool === 'node') { setTool('select'); return; }
+    cancelPending(); selectedIds.clear();
+    closeMenus(); closeCtxMenu(); closePaperPicker();
+    closePdfImport(); closePdfExport();
+    document.getElementById('kbd-modal').classList.remove('on');
+    updateProps(); scheduleDraw(); return;
+  }
   // Plain Enter — the keyboard equivalent of double-tap / COMMIT: locks the
   // radius or finalizes the sweep, whichever the current phase calls for.
   if (e.key === 'Enter' && tool === 'draw' && input === 'kompass' && kompassPhase !== 'idle') {
     e.preventDefault(); kompassAdvance(); return;
   }
-  if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (tool === 'node' && deleteSelectedNode()) return;
+    deleteSelected(); return;
+  }
   if (e.key === 'Tab')     { e.preventDefault(); setMode(mode === 'kanvas' ? 'kreate' : 'kanvas'); return; }
   if (e.key === '?')       { toggleKbd(); return; }
 
