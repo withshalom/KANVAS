@@ -68,13 +68,13 @@
   --hover:     rgba(255,255,255,0.06);
   --active:    rgba(255,255,255,0.10);
 
-  /* Accent is mode-driven: KANVAS teal, KREATE violet. Everything that
-     signals "this is the live tool" reads from --a1/--a2 so the whole
+  /* Accent is mode-driven: KANVAS violet, KREATE hot pink/fuchsia. Everything
+     that signals "this is the live tool" reads from --a1/--a2 so the whole
      chrome turns over when the mode does. */
-  --a1:  #40c0d8;
-  --a2:  #0090a8;
-  --a3:  #006888;
-  --a1g: rgba(0,144,168,0.22);
+  --a1:  #a68ae8;
+  --a2:  #7c5cd6;
+  --a3:  #4a2f92;
+  --a1g: rgba(124,92,214,0.22);
 
   --green: #00ffa3;
   --amber: #ffb347;
@@ -95,8 +95,8 @@
   --tabh:  30px;    /* sheet tab bar  */
   --ruler: 18px;
 
-  --kv:    #0090a8;  --kv2:  #40c0d8;  --kv-g: rgba(0,144,168,0.20);
-  --kt:    #7c5cd6;  --kt2:  #a68ae8;  --kt-g: rgba(124,92,214,0.20);
+  --kv:    #7c5cd6;  --kv2:  #a68ae8;  --kv-g: rgba(124,92,214,0.20);
+  --kt:    #c2168f;  --kt2:  #ff4fc3;  --kt-g: rgba(194,22,143,0.20);
 }
 
 /* ═══════════════════════════════ RESET ════════════════════════════════════ */
@@ -212,7 +212,7 @@ body.mode-kreate .mode-btn.kt { background:var(--kt-g); color:var(--kt2); }
 body.mode-kreate .mode-btn.kt .mb-mark { background:linear-gradient(140deg,var(--kt2),var(--kt)); color:#04050a; }
 
 /* KREATE repaints the accent chain. One rule, everything downstream follows. */
-body.mode-kreate { --a1:var(--kt2); --a2:var(--kt); --a3:#4a2f92; --a1g:var(--kt-g); }
+body.mode-kreate { --a1:var(--kt2); --a2:var(--kt); --a3:#7a0e5e; --a1g:var(--kt-g); }
 body.mode-kreate .kanvas-only { display:none !important; }
 .kreate-only { display:none; }
 body.mode-kreate .kreate-only { display:flex; }
@@ -268,7 +268,7 @@ body.mode-kanvas #canvas-wrap { inset:var(--ruler) 0 0 var(--ruler); }
 /* KREATE reads as a lit void rather than a table with paper on it. */
 body.mode-kreate #stage {
   background:
-    radial-gradient(circle at 50% 42%, rgba(124,92,214,0.10), transparent 62%),
+    radial-gradient(circle at 50% 42%, rgba(194,22,143,0.10), transparent 62%),
     #06070e;
 }
 
@@ -1375,12 +1375,12 @@ kbd {
     <div class="sec">Colour</div>
     <div class="sec-body">
       <div class="color-row">
-        <div class="color-chip" id="color-chip" style="background:#1a1028"
+        <div class="color-chip" id="color-chip" style="background:#ff4fc3"
              onclick="document.getElementById('cp').click()"></div>
         <div class="color-meta">
-          <input class="color-hex" id="hex-in" value="#1A1028" oninput="onHex(this.value)" spellcheck="false">
+          <input class="color-hex" id="hex-in" value="#FF4FC3" oninput="onHex(this.value)" spellcheck="false">
         </div>
-        <input type="color" id="cp" value="#1a1028" oninput="pickColor(this.value)" style="display:none">
+        <input type="color" id="cp" value="#ff4fc3" oninput="pickColor(this.value)" style="display:none">
       </div>
       <div class="swatches" id="swatches"></div>
     </div>
@@ -2029,7 +2029,7 @@ function paperDim(sheet) {
 
 function blankLayers() {
   return [
-    { name:'Ink',    color:'#1a1028', visible:true },
+    { name:'Ink',    color:'#ff4fc3', visible:true },
     { name:'Sketch', color:'#4d96ff', visible:true },
     { name:'Detail', color:'#00ffa3', visible:true },
   ];
@@ -2163,6 +2163,16 @@ function applySpace() {
   if (!holder) return;
   MEM  = holder.mem;
   HIST = holder.hist;
+  // Node Edit and the arc handles hold onto an object id across pointer
+  // events, and ids are only unique WITHIN a space's own document (each
+  // sheet's blankMem(), and KREATE, starts its own nextId at 1 — see the
+  // SPACES note above). Carrying that id across a space swap risks it
+  // resolving to a same-numbered but unrelated object in the space just
+  // switched into. Tab alone is enough to trigger this mid-edit, so the
+  // swap itself is the one place this is guaranteed to be caught.
+  if (tool === 'node') tool = 'select';
+  editingPathId = null; selectedNodeIdx = -1; nodeDrag = null; arcHandleDrag = null;
+  selectedIds.clear();
   // Restore only a camera the user actually set. An automatic one is re-fitted,
   // so a sheet opened at a stale size corrects itself instead of staying wrong.
   if (holder.cam && holder.camOwned) {
@@ -3078,7 +3088,7 @@ function commitPaperPicker() {
    BRUSH / VECTOR / ERASER / TEXT STATE
    ═══════════════════════════════════════════════════════════════════════════ */
 const B  = { size:14, opacity:0.92, alpha:0.60, taper:0.68, smooth:0.45,
-             color:'#1a1028', blend:'source-over', glow:false };
+             color:'#ff4fc3', blend:'source-over', glow:false };
 const SH = { width:4, opacity:1.0, stroke:true, fill:false,
              closed:false, dashed:false, sides:6 };
 const ER = { size:28, hardness:1.0, objectMode:false };
@@ -9480,7 +9490,7 @@ async function pdfCommitImport() {
 
 function pdfEnsureLayer(mem, name) {
   if (!mem.layers.some(l => l.name === name))
-    mem.layers.push({ name, color:'#40c0d8', visible:true });
+    mem.layers.push({ name, color:'#a68ae8', visible:true });
   mem.activeLayer = name;
 }
 
